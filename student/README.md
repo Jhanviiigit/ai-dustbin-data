@@ -56,6 +56,30 @@ differs.
 If `gray` is chosen, the detector's `item_crop()` must fill the background with the same
 value (128) that `remove_background.py` used. It does.
 
+**The detector as it is today only produces gray crops.** `item_crop()` sets everything
+outside the item's mask to 128, so the bin never sends a real-plate crop. The `plate`
+model only matches the bin if the detector is changed to keep the plate pixels. Until
+then, `gray` is the variant that matches; `plate` is kept for the comparison.
+
+## How the detector uses the student
+
+Checked against `feature/multi-item-detection` (`bin_vision/multi_item.py`):
+
+| Detector side | Student side |
+|---|---|
+| `load_student(student_dir, model_path, "classifier")` puts the folder on `sys.path` and does `__import__("classifier")` | **Keep the flat layout** (`from common import ...`, no package, `classifier.py` defines `WasteClassifier`) |
+| `WasteClassifier(model_path=...)` | one weights file; the temperature is inside it |
+| `classify_image(item_crop(...))`: uint8 BGR, box + 10% padding, gray 128 outside the mask | same framing as the val/test crops here |
+| reads `result["label"]` and `result["confidence"]` | `"dry"` / `"wet"` (the detector also accepts `"dry waste"` / `"wet waste"`), calibrated confidence |
+| calls it once per item, and again for each drop as it lands | no state between calls; `torch.inference_mode()` is used per call and does not change global torch settings |
+
+An empty (zero-size) crop raises a `ValueError`; any other label is rejected by the
+detector with a `ValueError` of its own.
+
+```bash
+python bin_vision/multi_item.py --webcam --student_dir student --model_path student/runs/gray/weights.pt
+```
+
 ## Item crops (same framing as the bin)
 
 On the bin the student never sees a whole photo: the detector sends the item's
@@ -114,7 +138,10 @@ threshold. (Who runs this, the teacher or the student side, is still to be agree
 Done
 - Training, calibration, evaluation and inference code.
 - Smoke test of the whole chain on a small set of random fake images (the numbers from
-  that run mean nothing). `classify_image` takes about 54 ms per crop on a laptop CPU.
+  that run mean nothing). `classify_image` takes about 20-55 ms per crop on a laptop CPU.
+- Hand-off checked with the detector's own `load_student()`, `item_crop()` and
+  `make_classify()` and a dummy (untrained) checkpoint: it loads, and gets `"dry"`/`"wet"`
+  plus a confidence from a gray-128 crop. This needs a re-check with real weights.
 
 Not done
 - Real training on C v2 and D v2 balanced, and the test results.

@@ -21,14 +21,16 @@ class WasteClassifier:
         self.model, ckpt = load_checkpoint(model_path)
         self.temperature = float(ckpt.get("temperature", 1.0))
         self.variant = ckpt.get("variant")
-        torch.set_grad_enabled(False)
 
     def classify_image(self, image):
         if not isinstance(image, np.ndarray) or image.ndim != 3 or image.shape[2] != 3:
             raise ValueError("image must be a HxWx3 BGR numpy array")
+        if image.shape[0] == 0 or image.shape[1] == 0:
+            raise ValueError("image is empty (the detector's crop has zero size)")
         start = time.perf_counter()
-        x = EVAL_TF(bgr_to_pil(image)).unsqueeze(0)
-        probs = torch.softmax(self.model(x)[0] / self.temperature, dim=0)
+        x = EVAL_TF(bgr_to_pil(image.astype(np.uint8, copy=False))).unsqueeze(0)
+        with torch.inference_mode():     # local to this call; does not touch other torch code in the process
+            probs = torch.softmax(self.model(x)[0] / self.temperature, dim=0)
         idx = int(probs.argmax())
         return {
             "label": LABELS[idx],
