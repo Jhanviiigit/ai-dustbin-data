@@ -60,6 +60,7 @@ parser = argparse.ArgumentParser(description="Clean and re-split the wet/dry was
 parser.add_argument("--src",          default="ai_dustbin_2",    help="Folder containing train/ and val/")
 parser.add_argument("--out",          default="cleaned_dataset", help="Output folder (recreated each run)")
 parser.add_argument("--realwaste",    default=None,              help="Optional path to the RealWaste folder (the one holding 'Cardboard', 'Food Organics', ...)")
+parser.add_argument("--exclude_sources", nargs="*", default=[],  help="Sources to leave out entirely, e.g. dataset2")
 parser.add_argument("--ratios",       type=float, nargs=3, default=[0.70, 0.15, 0.15], help="train val test")
 parser.add_argument("--seed",         type=int,   default=42)
 parser.add_argument("--phash_dist",   type=int,   default=4,  help="Max Hamming distance (of 64 bits) to call two images near-duplicates")
@@ -154,6 +155,11 @@ if args.realwaste:
                 "filename": f"realwaste_{folder.replace(' ', '_')}_{name}",
             }
             (records if rec["label"] else excluded).append(rec)
+
+if args.exclude_sources:
+    left_out = Counter(r["source"] for r in records if r["source"] in args.exclude_sources)
+    records = [r for r in records if r["source"] not in args.exclude_sources]
+    print(f"  Left out by --exclude_sources: {dict(left_out)}")
 print(f"  Found {len(records)} images" + (f" (+{len(excluded)} RealWaste 'Miscellaneous Trash' left out)" if excluded else ""))
 
 # ─── 2. Read, hash and quality-check every image ──────────────────────────────
@@ -308,7 +314,7 @@ cross_source = Counter(
 
 lines = [
     "# Dataset cleaning report", "",
-    f"- Sources: {', '.join(sources)}",
+    f"- Sources: {', '.join(sources)}" + (f" (left out: {', '.join(args.exclude_sources)})" if args.exclude_sources else ""),
     f"- Input images: **{len(records)}**" + (f" (RealWaste 'Miscellaneous Trash' left out: {len(excluded)})" if excluded else ""),
     f"- Kept: **{len(kept)}**  |  Dropped: **{len(records) - len(kept)}**",
     f"- Duplicate groups: {len(dup_groups)} (of which {old_split_leaks} had copies in both the old ai_dustbin_2 train and val folders)",

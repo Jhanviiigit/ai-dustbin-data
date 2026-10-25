@@ -29,8 +29,8 @@ LICENSE_TEXT = """This dataset is assembled from third-party sources. Credit the
   Licensed CC BY-NC-SA 4.0 (non-commercial, share-alike). Files prefixed 'realwaste_'.
 - Roboflow export "dry and wet waste - vdataset vibhaaa" (from siansusan/ai_dustbin_2),
   which includes TrashNet-style images (Thung & Yang, 2016).
-- 'dataset2_' files: origin not yet confirmed (from siansusan/ai_dustbin_2). Check its
-  source and license before publishing.
+- 'dataset2_' files (v1 datasets only; v2 leaves them out): origin unknown (from
+  siansusan/ai_dustbin_2). Do not publish results on them without confirming the source.
 
 Because RealWaste is CC BY-NC-SA 4.0, this combined dataset must be shared under the
 same license and must not be used commercially.
