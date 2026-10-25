@@ -59,7 +59,7 @@ def run_scenes(split, seed):
         rows = []
         for _ in range(args.n):
             labels = [rng.choice(["dry", "wet"]) for _ in range(n_items)]
-            reference, frames = maker.make_sequence(labels, touching=touching, together=together)
+            reference, frames, _ = maker.make_sequence(labels, touching=touching, together=together)
             detector = ItemDetector()
             detector.set_reference(reference)
             counter = DropCounter(detector)

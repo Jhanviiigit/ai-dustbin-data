@@ -23,6 +23,7 @@ from PIL import Image, ImageOps
 
 W, H = 640, 480
 PLATES = [(150, 150, 146), (70, 72, 75), (170, 120, 60)]   # light grey, dark grey, blue (BGR)
+TRUTH_IDS = {"dry": 1, "wet": 2}                            # values in the truth maps
 
 
 def long_path(path):
@@ -92,7 +93,8 @@ class SceneMaker:
         return np.clip(scene * exposure + self.np_rng.normal(0, 3, scene.shape), 0, 255).astype(np.uint8)
 
     @staticmethod
-    def paste(scene, cutout, cx, cy, size):
+    def paste(scene, cutout, cx, cy, size, truth=None, truth_id=0):
+        """Paste a cut-out; if truth is given, mark its pixels there with truth_id."""
         rgb, alpha = cutout
         scale = size / max(rgb.shape[:2])
         rgb = cv2.resize(rgb, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA).astype(np.float32)
@@ -108,6 +110,8 @@ class SceneMaker:
         region = scene[min(H, ys0 + 8):min(H, ys1 + 8), min(W, xs0 + 8):min(W, xs1 + 8)]
         region *= 1 - shadow[:region.shape[0], :region.shape[1]]
         scene[ys0:ys1, xs0:xs1] = scene[ys0:ys1, xs0:xs1] * (1 - sub_a) + sub_rgb * sub_a
+        if truth is not None:
+            truth[ys0:ys1, xs0:xs1][sub_a[..., 0] > 0.5] = truth_id
 
     def place(self, n_items, touching):
         """Centres and sizes: spread apart, or the first two touching."""
@@ -121,34 +125,39 @@ class SceneMaker:
         return [(x + self.rng.randint(-25, 25), y + self.rng.randint(-25, 25), s) for (x, y), s in zip(slots, sizes)]
 
     def _states(self, labels, touching):
-        """Plate, then the scene after each item is added (float images)."""
+        """Plate, then the scene after each item is added (float images), and a
+        truth map per state: 0 = plate, TRUTH_IDS[label] where an item is visible."""
         plate = self.plate()
-        states = [plate]
-        scene = plate.copy()
+        states, truths = [plate], [np.zeros((H, W), np.uint8)]
+        scene, truth = plate.copy(), truths[0].copy()
         for (cx, cy, size), label in zip(self.place(len(labels), touching), labels):
-            self.paste(scene, self.pool.pick(label), cx, cy, size)
+            self.paste(scene, self.pool.pick(label), cx, cy, size, truth, TRUTH_IDS[label])
             states.append(scene.copy())
-        return states
+            truths.append(truth.copy())
+        return states, truths
 
     def make_scene(self, labels, touching=False):
-        """(reference frame, scene frame) with all items present."""
-        states = self._states(labels, touching)
-        return self.snap(states[0]), self.snap(states[-1], exposure=self.rng.uniform(0.93, 1.07))
+        """(reference frame, scene frame, truth map) with all items present."""
+        states, truths = self._states(labels, touching)
+        return self.snap(states[0]), self.snap(states[-1], exposure=self.rng.uniform(0.93, 1.07)), truths[-1]
 
     def make_sequence(self, labels, touching=False, together=False, settle=4):
-        """(reference frame, list of frames): items arrive one by one, or all at
-        once if together=True. Each arrival = one blurred in-motion frame, then
-        `settle` still frames. Exposure drifts slowly, as auto-exposure does."""
-        states = self._states(labels, touching)
+        """(reference frame, list of frames, truth map per frame): items arrive one
+        by one, or all at once if together=True. Each arrival = one blurred
+        in-motion frame, then `settle` still frames. Exposure drifts slowly, as
+        auto-exposure does."""
+        states, truths = self._states(labels, touching)
         if together:
-            states = [states[0], states[-1]]
+            states, truths = [states[0], states[-1]], [truths[0], truths[-1]]
         exposure = 1.0
-        frames = []
+        frames, frame_truths = [], []
         for k, state in enumerate(states):
             if k > 0:   # in motion: halfway between the previous and new state, blurred
                 moving = cv2.GaussianBlur(0.5 * states[k - 1] + 0.5 * state, (0, 0), 4)
                 frames.append(self.snap(moving, exposure))
+                frame_truths.append(truths[k])
             for _ in range(settle):
                 exposure = float(np.clip(exposure + self.rng.uniform(-0.01, 0.01), 0.93, 1.07))
                 frames.append(self.snap(state, exposure))
-        return self.snap(states[0]), frames
+                frame_truths.append(truths[k])
+        return self.snap(states[0]), frames, frame_truths

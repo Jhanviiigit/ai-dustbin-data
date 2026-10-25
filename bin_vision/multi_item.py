@@ -1,45 +1,40 @@
 """
 multi_item.py
 -------------
-Finds every item on the bin's plate and decides whether the plate can tilt.
-
-The plate tilts one way, so a load is only safe to tilt when every item on it
-belongs in the same compartment. Pipeline:
+Finds every item on the bin's plate, labels each one, and decides whether the
+plate can tilt. The plate tilts one way, so a load may only tilt when every
+item on it belongs in the same compartment (dry+dry or wet+wet).
 
   1. Background subtraction against a reference photo of the empty plate
      (the camera and plate never move, so this is cheap and needs no network).
-  2. Clean up the change mask and split it into connected blobs = items.
-     Fragments of one item that sit close together are merged. Optional
-     (split_touching=True): blobs with a narrow "neck" are split with a
-     watershed. Off by default: on synthetic scenes it did not reduce unsafe
-     tilts for touching wet+dry items and it broke single items apart.
-  3. Crop each item, gray out everything outside its mask (same look as the
-     background-removed training set, dataset D), and classify it.
-  4. Decide:
+  2. Clean up the change mask and split it into blobs. Fragments of one item
+     that sit close together are merged.
+  3. Label every item with the student model, one crop per item. Crops are the
+     item's box + 10% padding, everything outside the item gray (128): the
+     same look as dataset D. Items get their label from
+       - their own blob, when items lie apart, or
+       - the DropCounter, which crops and labels each item the moment it
+         lands, while it is still alone. This keeps the labels of items that
+         end up touching.
+  4. assess() decides:
         EMPTY      nothing on the plate
-        TILT:DRY   every item is confidently dry
-        TILT:WET   every item is confidently wet
-        MIXED      confident items disagree   -> don't tilt, ask user to separate
-        ASK_HUMAN  any item is low-confidence -> don't tilt, ask a human
+        TILT:DRY   every item confidently dry  (dry, dry+dry, ...)
+        TILT:WET   every item confidently wet  (wet, wet+wet, ...)
+        MIXED      confident items disagree (dry+wet) -> don't tilt, ask the user to separate
+        ASK_HUMAN  any item below the confidence threshold -> don't tilt, ask a human
+        SEPARATE   one blob that looks like several touching items, with no drop
+                   history to label them -> contents unknown, don't tilt, ask to separate
+     Decision.composition is e.g. "dry+wet"; Decision.load_confidence is the
+     lowest item confidence (a load is only as certain as its weakest item).
 
-One-item-at-a-time warning (no classifier needed), checked before step 3:
-  check_count() returns MULTIPLE when
-    - there are 2+ blobs, or
-    - one blob looks like several items (ShapeRule: not compact, two distinct
-      colour regions, or bigger than one item), or
-    - the DropCounter saw 2+ separate drops since the plate was last empty.
-  The bin then warns the user and does not classify or tilt.
-
-Known limit: items that touch merge into one blob, and the classifier usually
-labels a merged wet+dry blob confidently as one class (about 80% unsafe tilts
-on synthetic scenes). The shape checks and drop counter exist to catch this;
-an object detector is future work.
+The student model is any object with classify_image(crop_bgr) returning
+{"label": "dry" | "wet", "confidence": float, ...}; see make_classify().
 
 Live demo (webcam; press 'r' with the plate empty to grab the reference, 'q' to quit):
-  python multi_item.py --webcam --classifier_dir ../../ai_dustbin_2
+  python multi_item.py --webcam --student_dir ../path/to/student --model_path student.pt
 
 Single image pair:
-  python multi_item.py --reference empty.jpg --frame scene.jpg --classifier_dir ../../ai_dustbin_2
+  python multi_item.py --reference empty.jpg --frame scene.jpg --student_dir ... --model_path ...
 """
 
 import argparse
@@ -64,9 +59,11 @@ class Item:
 
 @dataclass
 class Decision:
-    action: str                    # EMPTY, SINGLE, MULTIPLE, TILT:DRY, TILT:WET, MIXED, ASK_HUMAN
+    action: str                    # EMPTY, TILT:DRY, TILT:WET, MIXED, ASK_HUMAN, SEPARATE (check_count: SINGLE, MULTIPLE)
     items: list
     reason: str
+    composition: str = ""          # e.g. "dry+wet"; "" when unknown
+    load_confidence: float = 0.0   # lowest item confidence
 
 
 class ItemDetector:
@@ -256,7 +253,9 @@ class DropCounter:
     `settle_frames` frames, the plate has settled; if the foreground now
     covers a clearly new region compared with the last settled state, that is
     one more drop. Two items dropped one after another count 2 even if they
-    end up touching. Call reset() after the plate tilts.
+    end up touching. Given a classify function, each new item is cropped from
+    its new region and labelled right away, while it is still alone; these
+    labelled items are kept in drop_items. Call reset() after the plate tilts.
     """
 
     def __init__(self, detector, settle_frames=3, motion_level=20, motion_frac=0.004, min_new_frac=0.004):
@@ -269,11 +268,12 @@ class DropCounter:
 
     def reset(self):
         self.drops = 0
+        self.drop_items = []
         self.prev_gray = None
         self.still = 0
         self.settled_fg = None
 
-    def update(self, frame_bgr):
+    def update(self, frame_bgr, classify=None):
         small = cv2.resize(frame_bgr, (self.detector.work_width, int(round(frame_bgr.shape[0] * self.detector.work_width / frame_bgr.shape[1]))))
         gray = cv2.GaussianBlur(cv2.cvtColor(small, cv2.COLOR_BGR2GRAY), (5, 5), 0).astype(np.int16)
         moving = False
@@ -286,10 +286,28 @@ class DropCounter:
             if self.settled_fg is None:
                 self.settled_fg = np.zeros_like(fg)
             grown = cv2.dilate(self.settled_fg.astype(np.uint8), np.ones((9, 9), np.uint8)) > 0
-            if (fg & ~grown).mean() > self.min_new_frac:
+            new = fg & ~grown
+            if new.mean() > self.min_new_frac:
                 self.drops += 1
+                if classify is not None:
+                    item = _item_from_mask(new, frame_bgr.shape[:2])
+                    if item is not None:
+                        item.label, item.confidence = classify(frame_bgr, item)
+                        self.drop_items.append(item)
             self.settled_fg = fg
         return self.drops
+
+
+def _item_from_mask(small_mask, frame_hw):
+    """Item at full frame size from a working-size boolean mask (largest part only)."""
+    h, w = frame_hw
+    m = cv2.resize(small_mask.astype(np.uint8), (w, h), interpolation=cv2.INTER_NEAREST)
+    n, labels, stats, _ = cv2.connectedComponentsWithStats(m, connectivity=8)
+    if n < 2:
+        return None
+    i = 1 + int(np.argmax(stats[1:, cv2.CC_STAT_AREA]))
+    x, y, bw, bh, area = stats[i]
+    return Item(box=(int(x), int(y), int(bw), int(bh)), area_frac=area / (w * h), mask=(labels == i))
 
 
 def check_count(frame_bgr, items, rule=None, drops=None):
@@ -318,26 +336,62 @@ def item_crop(frame_bgr, item, pad=0.1):
     return crop
 
 
-def classify_items(frame_bgr, items, classifier):
-    """Fill in label/confidence for each item using a WasteClassifier."""
-    for item in items:
+def make_classify(classifier):
+    """classify(frame, item) -> (label, confidence) using the student model.
+
+    The student is any object with classify_image(crop_bgr) returning
+    {"label": "dry" | "wet", "confidence": float, ...}.
+    """
+    def classify(frame_bgr, item):
         result = classifier.classify_image(item_crop(frame_bgr, item))
-        item.label = "wet" if "wet" in result["label"] else "dry"
-        item.confidence = result["confidence"]
+        if result["label"] not in ("dry", "wet"):
+            raise ValueError(f"Student returned label {result['label']!r}; expected 'dry' or 'wet'")
+        return result["label"], float(result["confidence"])
+    return classify
+
+
+def classify_items(frame_bgr, items, classify):
+    """Fill in label/confidence for each item."""
+    for item in items:
+        item.label, item.confidence = classify(frame_bgr, item)
     return items
 
 
 def decide(items, threshold=0.6):
+    """Agreement rule over labelled items: TILT, MIXED or ASK_HUMAN."""
     if not items:
         return Decision("EMPTY", items, "nothing on the plate")
+    composition = "+".join(sorted(it.label for it in items))
+    load_conf = min(it.confidence for it in items)
     unsure = [it for it in items if it.confidence < threshold]
     labels = {it.label for it in items if it.confidence >= threshold}
     if len(labels) > 1:
-        return Decision("MIXED", items, f"{len(items)} items, both wet and dry")
+        return Decision("MIXED", items, f"{composition}: wet and dry together, please separate", composition, load_conf)
     if unsure:
-        return Decision("ASK_HUMAN", items, f"{len(unsure)} of {len(items)} item(s) below {threshold:.0%} confidence")
+        return Decision("ASK_HUMAN", items, f"{composition}: {len(unsure)} of {len(items)} item(s) below {threshold:.0%} confidence",
+                        composition, load_conf)
     label = labels.pop()
-    return Decision(f"TILT:{label.upper()}", items, f"{len(items)} item(s), all {label}")
+    return Decision(f"TILT:{label.upper()}", items, f"{composition}: all {label}", composition, load_conf)
+
+
+def assess(frame_bgr, items, classify, threshold=0.6, rule=None, drop_items=None):
+    """Full decision for the current plate: label every item, then decide().
+
+    items       blobs from ItemDetector.detect(frame)
+    drop_items  items labelled by DropCounter as they landed (optional)
+    """
+    if not items:
+        return Decision("EMPTY", items, "nothing on the plate")
+    drop_items = drop_items or []
+    if len(drop_items) > len(items):
+        # More drops than blobs: some items merged after landing. Their labels
+        # from the moment they landed are the only reliable ones.
+        return decide(drop_items, threshold)
+    if len(items) == 1 and rule is not None:
+        reason = suspect_multiple(blob_features(frame_bgr, items[0]), rule)
+        if reason:
+            return Decision("SEPARATE", items, f"probably several touching items ({reason}); contents unknown")
+    return decide(classify_items(frame_bgr, items, classify), threshold)
 
 
 def draw(frame_bgr, decision):
@@ -348,22 +402,25 @@ def draw(frame_bgr, decision):
         c = colours.get(it.label, (0, 0, 255))
         cv2.rectangle(out, (x, y), (x + bw, y + bh), c, 2)
         cv2.putText(out, f"{it.label} {it.confidence:.0%}", (x, max(15, y - 6)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, c, 2)
-    banner = {"MIXED": (0, 0, 255), "MULTIPLE": (0, 0, 255), "ASK_HUMAN": (0, 140, 255)}.get(decision.action, (40, 40, 40))
+    banner = {"MIXED": (0, 0, 255), "MULTIPLE": (0, 0, 255), "SEPARATE": (0, 0, 255),
+              "ASK_HUMAN": (0, 140, 255)}.get(decision.action, (40, 40, 40))
     cv2.rectangle(out, (0, 0), (out.shape[1], 30), banner, -1)
     cv2.putText(out, f"{decision.action}: {decision.reason}", (8, 21), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
     return out
 
 
-def load_classifier(classifier_dir, model_path=None):
-    sys.path.insert(0, os.path.abspath(classifier_dir))
-    from waste_classifier import WasteClassifier
-    return WasteClassifier(model_path=model_path or os.path.join(classifier_dir, "models", "waste_classifier.pt"))
+def load_student(student_dir, model_path, module="student"):
+    """Import the student's WasteClassifier from <student_dir>/<module>.py (or package)."""
+    sys.path.insert(0, os.path.abspath(student_dir))
+    WasteClassifier = getattr(__import__(module), "WasteClassifier")
+    return WasteClassifier(model_path=model_path)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Multi-item detection on the bin plate")
-    parser.add_argument("--classifier_dir", required=True, help="Folder with waste_classifier.py (the ai_dustbin_2 repo)")
-    parser.add_argument("--model_path",     default=None,  help="Defaults to <classifier_dir>/models/waste_classifier.pt")
+    parser.add_argument("--student_dir",    default=None, help="Folder containing the student model's code (leave out for count-only mode)")
+    parser.add_argument("--student_module", default="student", help="Module in student_dir that defines WasteClassifier")
+    parser.add_argument("--model_path",     default=None, help="Student weights file")
     parser.add_argument("--threshold",      type=float, default=0.6)
     parser.add_argument("--webcam",         action="store_true")
     parser.add_argument("--camera",         type=int, default=0)
@@ -372,7 +429,19 @@ if __name__ == "__main__":
     parser.add_argument("--save",           help="Where to save the annotated frame (image mode)")
     args = parser.parse_args()
 
-    classifier = load_classifier(args.classifier_dir, args.model_path)
+    classify = None
+    if args.student_dir:
+        if not args.model_path:
+            parser.error("--model_path is needed with --student_dir")
+        classify = make_classify(load_student(args.student_dir, args.model_path, args.student_module))
+    else:
+        print("No student model given: count-only mode (EMPTY / SINGLE / MULTIPLE).")
+
+    def evaluate(frame, items, drops=None, drop_items=None):
+        if classify is None:
+            return check_count(frame, items, DEFAULT_RULE, drops)
+        return assess(frame, items, classify, args.threshold, DEFAULT_RULE, drop_items)
+
     detector = ItemDetector()
     counter = DropCounter(detector)
 
@@ -388,14 +457,10 @@ if __name__ == "__main__":
                 cv2.putText(shown, "Empty the plate, then press 'r'", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
             else:
                 items = detector.detect(frame)
-                counter.update(frame)
-                count = check_count(frame, items, DEFAULT_RULE, counter.drops)
-                if count.action == "EMPTY":
+                counter.update(frame, classify)
+                if not items:
                     counter.reset()                      # plate cleared: start counting drops again
-                if count.action == "SINGLE":
-                    shown = draw(frame, decide(classify_items(frame, items, classifier), args.threshold))
-                else:
-                    shown = draw(frame, count)           # EMPTY, or MULTIPLE: "one item at a time"
+                shown = draw(frame, evaluate(frame, items, counter.drops, counter.drop_items))
             cv2.imshow("multi-item", shown)
             key = cv2.waitKey(1) & 0xFF
             if key == ord("r"):
@@ -411,10 +476,9 @@ if __name__ == "__main__":
         detector.set_reference(cv2.imread(args.reference))
         frame = cv2.imread(args.frame)
         items = detector.detect(frame)
-        decision = check_count(frame, items, DEFAULT_RULE)      # a single photo has no drop history
-        if decision.action == "SINGLE":
-            decision = decide(classify_items(frame, items, classifier), args.threshold)
-        print(f"{decision.action}: {decision.reason}")
+        decision = evaluate(frame, items)          # a single photo has no drop history
+        print(f"{decision.action}: {decision.reason}" +
+              (f"  (load confidence {decision.load_confidence:.0%})" if decision.composition else ""))
         for it in decision.items:
             print(f"  {it.label:3s} {it.confidence:.0%}  box={it.box}  area={it.area_frac:.1%}")
         if args.save:
