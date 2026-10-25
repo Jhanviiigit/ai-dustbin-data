@@ -340,13 +340,15 @@ def make_classify(classifier):
     """classify(frame, item) -> (label, confidence) using the student model.
 
     The student is any object with classify_image(crop_bgr) returning
-    {"label": "dry" | "wet", "confidence": float, ...}.
+    {"label": "dry" | "wet", "confidence": float, ...}; "dry waste" / "wet waste"
+    (the dataset folder names) are accepted too.
     """
     def classify(frame_bgr, item):
         result = classifier.classify_image(item_crop(frame_bgr, item))
-        if result["label"] not in ("dry", "wet"):
+        label = str(result["label"]).lower().replace(" waste", "").strip()
+        if label not in ("dry", "wet"):
             raise ValueError(f"Student returned label {result['label']!r}; expected 'dry' or 'wet'")
-        return result["label"], float(result["confidence"])
+        return label, float(result["confidence"])
     return classify
 
 
@@ -409,7 +411,7 @@ def draw(frame_bgr, decision):
     return out
 
 
-def load_student(student_dir, model_path, module="student"):
+def load_student(student_dir, model_path, module="classifier"):
     """Import the student's WasteClassifier from <student_dir>/<module>.py (or package)."""
     sys.path.insert(0, os.path.abspath(student_dir))
     WasteClassifier = getattr(__import__(module), "WasteClassifier")
@@ -419,7 +421,7 @@ def load_student(student_dir, model_path, module="student"):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Multi-item detection on the bin plate")
     parser.add_argument("--student_dir",    default=None, help="Folder containing the student model's code (leave out for count-only mode)")
-    parser.add_argument("--student_module", default="student", help="Module in student_dir that defines WasteClassifier")
+    parser.add_argument("--student_module", default="classifier", help="Module in student_dir that defines WasteClassifier")
     parser.add_argument("--model_path",     default=None, help="Student weights file")
     parser.add_argument("--threshold",      type=float, default=0.6)
     parser.add_argument("--webcam",         action="store_true")
