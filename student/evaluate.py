@@ -60,8 +60,11 @@ if __name__ == "__main__":
     T = float(ckpt["temperature"])
     ds = SplitDataset(data_dir, "test", EVAL_TF, args.masks_dir or ckpt.get("masks_dir"), EVAL_PAD)
     logits, labels = collect_logits(model, ds)
-    sources_by_stem = load_sources(data_dir)
-    sources = [sources_by_stem.get(path.stem, "unknown") for path, _ in ds.items]
+    if (Path(data_dir) / "manifest.csv").exists():
+        sources_by_stem = load_sources(data_dir)
+        sources = [sources_by_stem.get(path.stem, "unknown") for path, _ in ds.items]
+    else:                       # e.g. bin photos: no manifest, so one group
+        sources = ["all"] * len(ds)
     if "unknown" in sources:
         print(f"warning: {sources.count('unknown')} test images not found in manifest.csv")
 

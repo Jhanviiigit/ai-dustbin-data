@@ -125,6 +125,27 @@ python student/evaluate.py  --weights student/runs/gray/weights.pt --data_dir da
 
 `test/` is only for final numbers. Run `evaluate.py` once the settings are fixed.
 
+## Training stages
+
+1. **Base model (now).** ImageNet weights, fine-tuned on the datasets above
+   (`--variant gray`, and `plate` for the comparison).
+2. **Bin photos (later).** Photos captured by the bin's own camera adapt the base model
+   to the real camera, lighting and plate. They are the detector's crops already
+   (box + 10% padding, gray 128 outside), so they are not cropped again. Put them in the
+   same layout as the datasets, then continue from the base weights:
+
+```bash
+# dataset_bin/{train,val,test}/{dry waste,wet waste}/*.jpg   (manifest.csv is optional)
+python student/train.py     --variant bin --init_weights student/runs/gray/weights.pt --lr 3e-5 --out student/runs/bin
+python student/calibrate.py --weights student/runs/bin/weights.pt     # re-fit T on bin photos
+python student/evaluate.py  --weights student/runs/bin/weights.pt
+```
+
+`--init_weights` replaces the ImageNet start; the temperature is reset and must be
+re-fitted with `calibrate.py` (it uses the bin photos' `val/`, so "0.8" means 80% on the
+bin, not on the datasets). `--lr 3e-5` is a starting guess for fine-tuning, not tuned.
+Tested on fake images only.
+
 ## Updates from the teacher
 
 The teacher will later send new weights with the same model design and the same

@@ -14,6 +14,10 @@ IMG_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 
 # Dataset folder for each background style. Same images; only the background differs.
 VARIANTS = {"gray": "dataset_D_v2_balanced", "plate": "dataset_C_v2"}
+# "bin" = photos captured by the bin's own camera, later. They are already the detector's
+# crops (item box + 10% padding, gray 128 outside), so they are not cropped again.
+# Same layout as the others: dataset_bin/{train,val,test}/{dry waste,wet waste}/
+VARIANTS["bin"] = "dataset_bin"
 # Item masks for both variants (same file names). Used to crop every image to its item.
 MASKS = "dataset_D_v2_balanced/masks"
 
