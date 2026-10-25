@@ -1,0 +1,9 @@
+# Datasets and sources are shared via GitHub Releases, not committed
+ai_dustbin_2/
+realwaste/
+cleaned_dataset/
+dataset_*/
+*.zip
+
+__pycache__/
+*.pyc
