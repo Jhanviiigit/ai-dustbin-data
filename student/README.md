@@ -23,9 +23,12 @@ from classifier import WasteClassifier
 
 classifier = WasteClassifier(model_path="student/runs/gray/weights.pt")
 result = classifier.classify_image(crop_bgr)    # numpy BGR image of ONE item
-# {"label": "dry waste" | "wet waste", "confidence": 0.0-1.0,
+# {"label": "dry" | "wet", "confidence": 0.0-1.0,
 #  "dry_prob": ..., "wet_prob": ..., "inference_ms": ...}
 ```
+
+The detector (`bin_vision/multi_item.py`) loads this with
+`--student_dir student --model_path student/runs/gray/weights.pt` (module `classifier`).
 
 `confidence` is the probability of the predicted label after temperature scaling, so
 "0.8" should mean about 80% likely to be right. The human-in-the-loop threshold depends
@@ -33,7 +36,8 @@ on this. The temperature is stored inside the weights file, so one file is enoug
 
 ## Model
 
-MobileNetV2, starting from ImageNet weights, with a 2-class head (`dry waste`, `wet waste`).
+MobileNetV2, starting from ImageNet weights, with a 2-class head (`dry`, `wet`; the
+dataset folders are `dry waste` and `wet waste`).
 All layers are fine-tuned (AdamW, lr 1e-4, cosine schedule, 15 epochs, class-weighted
 loss, seed 42). The epoch with the best validation accuracy is kept.
 
@@ -50,7 +54,25 @@ differs.
 | `plate` | `dataset_C_v2` | the real plate |
 
 If `gray` is chosen, the detector's `item_crop()` must fill the background with the same
-value (128) that `remove_background.py` used.
+value (128) that `remove_background.py` used. It does.
+
+## Item crops (same framing as the bin)
+
+On the bin the student never sees a whole photo: the detector sends the item's
+bounding box + 10% padding. The dataset images are whole photos where the item often
+fills only a quarter of the frame. So every image is first cropped to its item, using
+the masks in `dataset_D_v2_balanced/masks/` (they also fit `dataset_C_v2`: same file
+names):
+
+| Split | Padding around the item's box |
+|---|---|
+| train | random 5-30% of the box's longer side |
+| val, test | exactly 10%, as the detector |
+
+The crop is clamped to the image, like the detector's. Masks that cover under 1% of
+the image are failed cut-outs; those images are used whole. `train.py` stores the mask
+folder in the weights file, so `calibrate.py` and `evaluate.py` crop the same way.
+`--no_crop` trains on whole images, for comparison.
 
 ## Files
 
@@ -67,7 +89,8 @@ value (128) that `remove_background.py` used.
 ```bash
 pip install -r requirements.txt
 
-# datasets: see the main README (release data-v2), unzipped into the repo folder
+# datasets: see the main README (release data-v2), unzipped into the repo folder.
+# dataset_D_v2_balanced is needed for both variants (it holds the masks).
 python student/train.py     --variant gray  --data_root .
 python student/calibrate.py --weights student/runs/gray/weights.pt
 python student/evaluate.py  --weights student/runs/gray/weights.pt
@@ -95,9 +118,9 @@ Done
 
 Not done
 - Real training on C v2 and D v2 balanced, and the test results.
-- `evaluate.py` has not been run on the real `manifest.csv`. It guesses the filename
-  column and needs `source` and `split` columns; it stops with a clear message if the
-  columns are not what it expects.
+- `evaluate.py` finds each test image's source through the manifest's `new_path`
+  column (backslashes normalised, so it also works on Linux/Kaggle). The `path` column
+  is the file before cleaning and does not match renamed RealWaste files.
 - The gray vs plate decision.
 - Who calibrates after a teacher update.
 - Handing over the `.pt` files (`*.pt` is gitignored; they will go in a release).

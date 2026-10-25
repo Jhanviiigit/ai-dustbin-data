@@ -2,7 +2,7 @@
 
     classifier = WasteClassifier(model_path="student/runs/gray/weights.pt")
     result = classifier.classify_image(crop_bgr)    # numpy BGR image of ONE item
-    # {"label": "dry waste" | "wet waste", "confidence": 0.0-1.0,
+    # {"label": "dry" | "wet", "confidence": 0.0-1.0,
     #  "dry_prob": ..., "wet_prob": ..., "inference_ms": ...}
 
 confidence is the calibrated probability of the predicted label (temperature scaling).
@@ -13,7 +13,7 @@ import time
 import numpy as np
 import torch
 
-from common import CLASSES, EVAL_TF, bgr_to_pil, load_checkpoint
+from common import EVAL_TF, LABELS, bgr_to_pil, load_checkpoint
 
 
 class WasteClassifier:
@@ -31,7 +31,7 @@ class WasteClassifier:
         probs = torch.softmax(self.model(x)[0] / self.temperature, dim=0)
         idx = int(probs.argmax())
         return {
-            "label": CLASSES[idx],
+            "label": LABELS[idx],
             "confidence": float(probs[idx]),
             "dry_prob": float(probs[0]),
             "wet_prob": float(probs[1]),

@@ -13,7 +13,7 @@ from pathlib import Path
 import torch
 import torch.nn.functional as F
 
-from common import EVAL_TF, SplitDataset, collect_logits, load_checkpoint
+from common import EVAL_PAD, EVAL_TF, SplitDataset, collect_logits, load_checkpoint
 
 
 def ece(probs, labels, bins=15):
@@ -47,10 +47,12 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser()
     p.add_argument("--weights", required=True)
     p.add_argument("--data_dir", default=None, help="default: the dataset the model was trained on")
+    p.add_argument("--masks_dir", default=None, help="default: the masks the model was trained with (item crops)")
     args = p.parse_args()
 
     model, ckpt = load_checkpoint(args.weights)
-    val_ds = SplitDataset(args.data_dir or ckpt["data_dir"], "val", EVAL_TF)
+    val_ds = SplitDataset(args.data_dir or ckpt["data_dir"], "val", EVAL_TF,
+                          args.masks_dir or ckpt.get("masks_dir"), EVAL_PAD)
     logits, labels = collect_logits(model, val_ds)
 
     T = fit_temperature(logits, labels)

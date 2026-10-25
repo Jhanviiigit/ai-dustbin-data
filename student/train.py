@@ -7,6 +7,10 @@ gray  = dataset_D_v2_balanced (background removed, gray 128)
 plate = dataset_C_v2          (real plate)
 Both use the same images, seed and settings, so only the background differs.
 Only train/ is used for fitting and val/ for choosing the epoch. test/ is never touched here.
+
+Every image is cropped to its item first (mask box + padding, as the detector crops
+on the bin): random 5-30% padding for train, exactly 10% for val. Masks come from
+dataset_D_v2_balanced/masks for both variants. --no_crop trains on whole images.
 """
 import argparse
 import random
@@ -16,13 +20,15 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from common import (CLASSES, GRAY, IMG_SIZE, TRAIN_TF, EVAL_TF, VARIANTS,
-                    SplitDataset, build_model, collect_logits)
+from common import (CLASSES, EVAL_PAD, GRAY, IMG_SIZE, LABELS, MASKS, TRAIN_PAD, TRAIN_TF, EVAL_TF,
+                    VARIANTS, SplitDataset, build_model, collect_logits)
 
 p = argparse.ArgumentParser()
 p.add_argument("--variant", required=True, choices=VARIANTS)
 p.add_argument("--data_root", default=".", help="folder that contains the dataset folders")
 p.add_argument("--data_dir", default=None, help="override the dataset folder")
+p.add_argument("--masks_dir", default=None, help=f"item masks (default: <data_root>/{MASKS})")
+p.add_argument("--no_crop", action="store_true", help="train on whole images instead of item crops")
 p.add_argument("--out", default=None, help="default: student/runs/<variant>")
 p.add_argument("--epochs", type=int, default=15)
 p.add_argument("--batch_size", type=int, default=32)
@@ -35,9 +41,13 @@ data_dir = Path(args.data_dir or Path(args.data_root) / VARIANTS[args.variant])
 out_dir = Path(args.out or Path(__file__).parent / "runs" / args.variant)
 out_dir.mkdir(parents=True, exist_ok=True)
 
-train_ds = SplitDataset(data_dir, "train", TRAIN_TF)
-val_ds = SplitDataset(data_dir, "val", EVAL_TF)
-print(f"{args.variant}: {data_dir}  train={len(train_ds)} val={len(val_ds)}")
+masks_dir = None if args.no_crop else Path(args.masks_dir or Path(args.data_root) / MASKS)
+if masks_dir is not None and not masks_dir.is_dir():
+    raise SystemExit(f"masks folder not found: {masks_dir} (unzip dataset_D_v2_balanced.zip, or pass --no_crop)")
+train_ds = SplitDataset(data_dir, "train", TRAIN_TF, masks_dir, TRAIN_PAD, seed=args.seed)
+val_ds = SplitDataset(data_dir, "val", EVAL_TF, masks_dir, EVAL_PAD)
+print(f"{args.variant}: {data_dir}  train={len(train_ds)} val={len(val_ds)}  "
+      f"crops: {'item box + padding from ' + str(masks_dir) if masks_dir else 'off (whole images)'}")
 
 # Class weights from the train counts, so the rarer class is not ignored.
 counts = np.bincount([y for _, y in train_ds.items], minlength=len(CLASSES))
@@ -76,6 +86,8 @@ for epoch in range(1, args.epochs + 1):
             "temperature": 1.0,             # set by calibrate.py
             "variant": args.variant,
             "classes": CLASSES,
+            "labels": LABELS,
+            "masks_dir": str(masks_dir) if masks_dir else None,    # calibrate/evaluate crop the same way
             "gray": GRAY,
             "img_size": IMG_SIZE,
             "epoch": epoch,
