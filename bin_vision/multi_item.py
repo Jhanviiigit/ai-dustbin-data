@@ -22,9 +22,18 @@ belongs in the same compartment. Pipeline:
         MIXED      confident items disagree   -> don't tilt, ask user to separate
         ASK_HUMAN  any item is low-confidence -> don't tilt, ask a human
 
+One-item-at-a-time warning (no classifier needed), checked before step 3:
+  check_count() returns MULTIPLE when
+    - there are 2+ blobs, or
+    - one blob looks like several items (ShapeRule: not compact, two distinct
+      colour regions, or bigger than one item), or
+    - the DropCounter saw 2+ separate drops since the plate was last empty.
+  The bin then warns the user and does not classify or tilt.
+
 Known limit: items that touch merge into one blob, and the classifier usually
 labels a merged wet+dry blob confidently as one class (about 80% unsafe tilts
-on synthetic scenes). Handling touching items needs an object detector.
+on synthetic scenes). The shape checks and drop counter exist to catch this;
+an object detector is future work.
 
 Live demo (webcam; press 'r' with the plate empty to grab the reference, 'q' to quit):
   python multi_item.py --webcam --classifier_dir ../../ai_dustbin_2
@@ -55,7 +64,7 @@ class Item:
 
 @dataclass
 class Decision:
-    action: str                    # EMPTY, TILT:DRY, TILT:WET, MIXED, ASK_HUMAN
+    action: str                    # EMPTY, SINGLE, MULTIPLE, TILT:DRY, TILT:WET, MIXED, ASK_HUMAN
     items: list
     reason: str
 
@@ -169,6 +178,135 @@ class ItemDetector:
         return items
 
 
+@dataclass
+class ShapeRule:
+    """When one blob probably holds more than one item. Any rule that fires counts.
+    Defaults come from tuning on synthetic val-split scenes (test_counting.py)."""
+    min_solidity: float = 0.0          # blob area / convex hull area below this -> several items
+    max_area_frac: float = 1.0         # blob bigger than this share of the frame -> several items
+    min_color_sep: float = float("inf")  # two colour clusters further apart than this -> several items
+    min_color_minor: float = 0.2       # ... and the smaller cluster is at least this share of the blob
+    min_notch2: float = float("inf")   # second-deepest notch (relative to blob size) above this -> several items
+
+
+def blob_features(frame_bgr, item):
+    """Shape and colour features of one blob, used by ShapeRule."""
+    x, y, w, h = item.box
+    sub = item.mask[y:y + h, x:x + w].astype(np.uint8)
+    contours, _ = cv2.findContours(sub, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contour = max(contours, key=cv2.contourArea)
+    area = float(sub.sum())
+    hull_area = cv2.contourArea(cv2.convexHull(contour))
+    solidity = area / hull_area if hull_area > 0 else 1.0
+    # Two items meeting leave notches on both sides of the join: the two
+    # deepest convexity defects, relative to the blob's size
+    notch1 = notch2 = 0.0
+    try:
+        defects = cv2.convexityDefects(contour, cv2.convexHull(contour, returnPoints=False))
+        if defects is not None:
+            depths = sorted((defects[:, 0, 3] / 256.0) / np.sqrt(area), reverse=True)
+            notch1 = float(depths[0]) if len(depths) > 0 else 0.0
+            notch2 = float(depths[1]) if len(depths) > 1 else 0.0
+    except cv2.error:
+        pass                                   # self-intersecting hull: leave notches at 0
+    (_, _), (rw, rh), _ = cv2.minAreaRect(contour)
+    elongation = max(rw, rh) / max(min(rw, rh), 1.0)
+
+    # Two-cluster k-means on the blob's colours (Lab, lightness down-weighted
+    # so shading on one object does not look like two objects)
+    lab = cv2.cvtColor(frame_bgr[y:y + h, x:x + w], cv2.COLOR_BGR2LAB).astype(np.float32)
+    pixels = lab[sub > 0] * np.array([0.5, 1.0, 1.0], np.float32)
+    if len(pixels) > 3000:
+        pixels = pixels[np.random.default_rng(0).choice(len(pixels), 3000, replace=False)]
+    color_sep, color_minor = 0.0, 0.0
+    if len(pixels) >= 50:
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 0.5)
+        _, labels, centers = cv2.kmeans(pixels, 2, None, criteria, 3, cv2.KMEANS_PP_CENTERS)
+        labels = labels.ravel()
+        spread = np.sqrt(np.mean([pixels[labels == k].var(axis=0).sum() for k in (0, 1) if (labels == k).any()]))
+        color_sep = float(np.linalg.norm(centers[0] - centers[1]) / max(spread, 1e-6))
+        color_minor = float(min(labels.mean(), 1 - labels.mean()))
+    return {"solidity": solidity, "area_frac": item.area_frac, "color_sep": color_sep, "color_minor": color_minor,
+            "notch1": notch1, "notch2": notch2, "elongation": elongation}
+
+
+def suspect_multiple(features, rule):
+    """Reason string if the blob looks like several items, else None."""
+    if features["solidity"] < rule.min_solidity:
+        return f"blob not compact (solidity {features['solidity']:.2f})"
+    if features["area_frac"] > rule.max_area_frac:
+        return f"blob larger than one item ({features['area_frac']:.0%} of frame)"
+    if features["notch2"] > rule.min_notch2:
+        return f"notches on both sides of a join (depth {features['notch2']:.2f})"
+    if features["color_sep"] > rule.min_color_sep and features["color_minor"] >= rule.min_color_minor:
+        return f"two distinct colour regions (separation {features['color_sep']:.1f})"
+    return None
+
+
+# Tuned on synthetic val-split scenes (test_counting.py): <= 5% false alarms on single
+# items. max_area_frac depends on how big one item looks to the camera, so
+# re-tune it on real bin photos once the camera is mounted.
+DEFAULT_RULE = ShapeRule(max_area_frac=0.09, min_notch2=0.5)
+
+
+class DropCounter:
+    """Counts separate drops onto the plate since it was last empty.
+
+    Watches consecutive frames. When the picture stops changing for
+    `settle_frames` frames, the plate has settled; if the foreground now
+    covers a clearly new region compared with the last settled state, that is
+    one more drop. Two items dropped one after another count 2 even if they
+    end up touching. Call reset() after the plate tilts.
+    """
+
+    def __init__(self, detector, settle_frames=3, motion_level=20, motion_frac=0.004, min_new_frac=0.004):
+        self.detector = detector
+        self.settle_frames = settle_frames
+        self.motion_level = motion_level      # grey-level change that counts as motion
+        self.motion_frac = motion_frac        # share of pixels that must move to count as motion
+        self.min_new_frac = min_new_frac      # new foreground needed to count a drop
+        self.reset()
+
+    def reset(self):
+        self.drops = 0
+        self.prev_gray = None
+        self.still = 0
+        self.settled_fg = None
+
+    def update(self, frame_bgr):
+        small = cv2.resize(frame_bgr, (self.detector.work_width, int(round(frame_bgr.shape[0] * self.detector.work_width / frame_bgr.shape[1]))))
+        gray = cv2.GaussianBlur(cv2.cvtColor(small, cv2.COLOR_BGR2GRAY), (5, 5), 0).astype(np.int16)
+        moving = False
+        if self.prev_gray is not None:
+            moving = (np.abs(gray - self.prev_gray) > self.motion_level).mean() > self.motion_frac
+        self.prev_gray = gray
+        self.still = 0 if moving else self.still + 1
+        if self.still == self.settle_frames:
+            fg = self.detector.change_mask(frame_bgr) > 0
+            if self.settled_fg is None:
+                self.settled_fg = np.zeros_like(fg)
+            grown = cv2.dilate(self.settled_fg.astype(np.uint8), np.ones((9, 9), np.uint8)) > 0
+            if (fg & ~grown).mean() > self.min_new_frac:
+                self.drops += 1
+            self.settled_fg = fg
+        return self.drops
+
+
+def check_count(frame_bgr, items, rule=None, drops=None):
+    """Count-only decision before any classification: EMPTY, SINGLE or MULTIPLE."""
+    if not items:
+        return Decision("EMPTY", items, "nothing on the plate")
+    if len(items) > 1:
+        return Decision("MULTIPLE", items, f"{len(items)} separate items")
+    if drops is not None and drops > 1:
+        return Decision("MULTIPLE", items, f"{drops} separate drops onto the plate")
+    if rule is not None:
+        reason = suspect_multiple(blob_features(frame_bgr, items[0]), rule)
+        if reason:
+            return Decision("MULTIPLE", items, reason)
+    return Decision("SINGLE", items, "one item")
+
+
 def item_crop(frame_bgr, item, pad=0.1):
     """Square-ish crop around the item with everything outside its mask grayed out."""
     h, w = frame_bgr.shape[:2]
@@ -210,7 +348,7 @@ def draw(frame_bgr, decision):
         c = colours.get(it.label, (0, 0, 255))
         cv2.rectangle(out, (x, y), (x + bw, y + bh), c, 2)
         cv2.putText(out, f"{it.label} {it.confidence:.0%}", (x, max(15, y - 6)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, c, 2)
-    banner = {"MIXED": (0, 0, 255), "ASK_HUMAN": (0, 140, 255)}.get(decision.action, (40, 40, 40))
+    banner = {"MIXED": (0, 0, 255), "MULTIPLE": (0, 0, 255), "ASK_HUMAN": (0, 140, 255)}.get(decision.action, (40, 40, 40))
     cv2.rectangle(out, (0, 0), (out.shape[1], 30), banner, -1)
     cv2.putText(out, f"{decision.action}: {decision.reason}", (8, 21), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
     return out
@@ -236,6 +374,7 @@ if __name__ == "__main__":
 
     classifier = load_classifier(args.classifier_dir, args.model_path)
     detector = ItemDetector()
+    counter = DropCounter(detector)
 
     if args.webcam:
         cap = cv2.VideoCapture(args.camera)
@@ -248,8 +387,15 @@ if __name__ == "__main__":
                 shown = frame.copy()
                 cv2.putText(shown, "Empty the plate, then press 'r'", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
             else:
-                decision = decide(classify_items(frame, detector.detect(frame), classifier), args.threshold)
-                shown = draw(frame, decision)
+                items = detector.detect(frame)
+                counter.update(frame)
+                count = check_count(frame, items, DEFAULT_RULE, counter.drops)
+                if count.action == "EMPTY":
+                    counter.reset()                      # plate cleared: start counting drops again
+                if count.action == "SINGLE":
+                    shown = draw(frame, decide(classify_items(frame, items, classifier), args.threshold))
+                else:
+                    shown = draw(frame, count)           # EMPTY, or MULTIPLE: "one item at a time"
             cv2.imshow("multi-item", shown)
             key = cv2.waitKey(1) & 0xFF
             if key == ord("r"):
@@ -264,7 +410,10 @@ if __name__ == "__main__":
             parser.error("Give --webcam, or both --reference and --frame")
         detector.set_reference(cv2.imread(args.reference))
         frame = cv2.imread(args.frame)
-        decision = decide(classify_items(frame, detector.detect(frame), classifier), args.threshold)
+        items = detector.detect(frame)
+        decision = check_count(frame, items, DEFAULT_RULE)      # a single photo has no drop history
+        if decision.action == "SINGLE":
+            decision = decide(classify_items(frame, items, classifier), args.threshold)
         print(f"{decision.action}: {decision.reason}")
         for it in decision.items:
             print(f"  {it.label:3s} {it.confidence:.0%}  box={it.box}  area={it.area_frac:.1%}")
