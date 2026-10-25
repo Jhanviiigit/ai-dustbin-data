@@ -79,8 +79,10 @@ for k, r in enumerate(rows, start=1):
             composite.save(long_path(out_img), quality=95)
         done += 1
 
-    r["mask_coverage"] = round(float(np.asarray(mask, dtype=np.float32).mean() / 255), 4)
-    r["bg_status"] = "keep" if r["mask_coverage"] >= args.min_coverage else "drop (mask nearly empty)"
+    coverage = float(np.asarray(mask, dtype=np.float32).mean() / 255)
+    r["mask_coverage"] = round(coverage, 4)
+    # Decide on the unrounded value, the same one used when the image was written
+    r["bg_status"] = "keep" if coverage >= args.min_coverage else "drop (mask nearly empty)"
     r["bg_path"] = os.path.join(stem + ".jpg") if r["bg_status"] == "keep" else ""
 
     if k % 200 == 0 or k == len(rows):

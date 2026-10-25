@@ -12,10 +12,11 @@ Datasets are attached to this repo's **Releases** as zip files, not committed to
 | Dataset | What it is | Images | Status |
 |---|---|---|---|
 | `dataset_C.zip` | Cleaned data, **wet/dry balanced 50/50 within each source** | 6,034 | Released |
-| `dataset_D.zip` | Cleaned data, **background removed** (U²-Net, gray background) + masks | about 9,600 | Generating, released when it finishes |
+| `dataset_D.zip` | Cleaned data, **background removed** (U²-Net, gray background) + masks | 9,542 | Released |
 
 ```bash
 gh release download data-v1 --repo Jhanviiigit/ai-dustbin-data --pattern "dataset_C.zip"
+gh release download data-v1 --repo Jhanviiigit/ai-dustbin-data --pattern "dataset_D.zip"
 ```
 
 Each zip has the same layout, so the existing training script works directly:
@@ -87,7 +88,8 @@ On Windows, clone with `git -c core.longpaths=true clone ...` if you hit "Filena
 - **Watermarks**: some `dataset2` wet images carry stock-photo watermarks or text overlays.
   Not yet filtered.
 - **Background removal fails on piles** (leaf heaps, stacks of pipes) and sometimes on
-  transparent items. Check `dataset_D/report.md` for failure rates per class.
+  transparent items. 137 images (1.4%) were dropped because the cutout erased the object.
+  The rate is fairly even, except Roboflow wet at 5.2%. See `reports/dataset_D_report.md`.
 - **No photos from the bin's own camera yet.** These are needed as the real test set.
 
 ## License
