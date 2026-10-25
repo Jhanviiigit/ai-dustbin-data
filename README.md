@@ -13,7 +13,8 @@ Datasets are attached to this repo's **Releases** as zip files, not committed to
 | Dataset | What it is | Images (train / val / test) |
 |---|---|---|
 | `dataset_C_v2.zip` | Wet/dry **balanced 50/50 within each source** | 2,772 (1,940 / 416 / 416) |
-| `dataset_D_v2.zip` | **Background removed** (U²-Net, gray background) + masks | 6,015 (4,214 / 898 / 903) |
+| `dataset_D_v2_balanced.zip` | **The same images as C v2, background removed** (U²-Net, gray background) + masks. Compare this with C: only the background differs. | 2,716 (1,902 / 403 / 411) |
+| `dataset_D_v2.zip` | All cleaned images, background removed, **not balanced** (22% wet) + masks | 6,015 (4,214 / 898 / 903) |
 
 ```bash
 gh release download data-v2 --repo Jhanviiigit/ai-dustbin-data
@@ -79,6 +80,7 @@ git clone https://github.com/sam-single/realwaste.git
 python data_prep/clean_dataset.py --src ai_dustbin_2 --realwaste realwaste/RealWaste --exclude_sources dataset2 --out cleaned_v2
 python data_prep/make_balanced.py --src cleaned_v2 --out dataset_C_v2
 python data_prep/remove_background.py --src cleaned_v2 --out dataset_D_v2
+python data_prep/remove_background.py --src dataset_C_v2 --out dataset_D_v2_balanced --reuse_from dataset_D_v2
 ```
 
 Every step uses a fixed seed (42), so the same inputs give the same splits.
