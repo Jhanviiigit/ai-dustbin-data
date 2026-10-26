@@ -13,7 +13,7 @@ identical crops. Bin crops (`dataset_bin`, feedback) are already the detector's 
 | # | | Format |
 |---|---|---|
 | 2 | reads | `dataset_bin/{train,val,test}/{dry waste,wet waste}/<crop_id>.jpg` + `manifest.csv` (split by `item_id`) |
-| 4 | reads | `feedback/<crop_id>.jpg` + `feedback.csv`. Unlabelled rows and mixed (dry+wet) loads are dropped |
+| 4 | reads | hitl.py feedback folder: `feedback.csv` + `crops/<crop_id>.jpg` (via `crop_file`). Selected by `student/common.py` `load_feedback()`: every human-labelled item is kept (dry+wet loads too); only crops whose box overlaps another item in the same load, unlabelled rows, and copies of val/test images are dropped |
 | 5 | writes | `soft_labels_<dataset>_<version>.csv`: `split, class_folder, filename, teacher_wet_prob, teacher_logit, teacher_version` |
 | 6 | writes | `<version>.joblib`: classifier, C, temperature, backbone, crop settings, version, trained_on, sklearn version |
 

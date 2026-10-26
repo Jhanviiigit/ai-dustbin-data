@@ -10,9 +10,9 @@ Runs off the bin (Colab / laptop). In the update cycle it:
 Hand-off formats (team doc):
   2  bin dataset : dataset_bin/{train,val,test}/{dry waste,wet waste}/<crop_id>.jpg + manifest.csv
                    (crop_id, new_path, split, label, item_id, session, lighting, captured_at)
-  4  feedback    : feedback/<crop_id>.jpg + feedback.csv (crop_id, timestamp, student_version,
-                   student_label, student_confidence, load_id, load_composition, decision,
-                   trigger, human_label)
+  4  feedback    : hitl.py FeedbackStore folder: feedback.csv (crop_file relative to the folder,
+                   e.g. crops/<crop_id>.jpg; load_id, box, human_label, ...). Read through
+                   student/common.py load_feedback(), so teacher and student use the same rows.
   5  soft labels : split, class_folder, filename, teacher_wet_prob, teacher_logit, teacher_version
                    teacher_logit = raw log-odds of "wet" (uncalibrated); teacher_wet_prob = sigmoid(logit / T)
   6  teacher     : teacher_vN.joblib = classifier, temperature, backbone, crop settings, ...
@@ -166,33 +166,44 @@ def index_bin_dataset(root) -> pd.DataFrame:
     return df
 
 
-def index_feedback(feedback_dir) -> pd.DataFrame:
-    """Format 4 → training rows (split='feedback').
+def index_feedback(feedback_dir, exclude_hashes=frozenset()) -> pd.DataFrame:
+    """Format 4 (hitl.py FeedbackStore folder) → training rows (split='feedback').
 
-    Kept: rows with a human_label of dry/wet whose load was not mixed (dry+wet loads are
-    logged for the paper but never used as labels). Grouped by load_id for out-of-fold.
+    Which crops are used is decided by student/common.py load_feedback(), so the teacher and
+    the student always learn from exactly the same feedback:
+      * every item the human labelled is kept, including items of dry+wet loads;
+      * dropped: no human label, missing file, a crop whose box overlaps another item's box
+        in the same load, and exact copies of val/test images (exclude_hashes).
+    Crop paths come from feedback.csv's crop_file (relative to the folder, e.g. crops/<id>.jpg).
+    Rows are grouped by load_id for the out-of-fold soft labels.
     """
+    try:
+        from student.common import load_feedback
+    except ImportError as e:
+        raise ImportError("index_feedback needs student/common.py (load_feedback), so teacher and "
+                          "student use the same feedback rule") from e
     feedback_dir = Path(feedback_dir)
-    fb = pd.read_csv(feedback_dir / "feedback.csv")
-    n0 = len(fb)
-    lab = fb.human_label.astype(str).str.strip().str.lower().str.replace(" waste", "", regex=False)
-    comp = fb.get("load_composition", pd.Series([""] * len(fb))).astype(str).str.lower()
-    mixed = comp.str.contains("dry") & comp.str.contains("wet") | comp.str.contains("mixed")
-    keep = lab.isin(LABELS) & ~mixed
-    fb, lab = fb[keep].copy(), lab[keep]
+    used = load_feedback(feedback_dir, exclude_hashes)
+    fb = pd.read_csv(feedback_dir / "feedback.csv", dtype=str, keep_default_na=False)
+    by_path = {str((feedback_dir / r["crop_file"]).resolve()): r for r in fb.to_dict("records")}
     rows = []
-    for r, l in zip(fb.itertuples(), lab):
-        p = feedback_dir / f"{r.crop_id}.jpg"
-        if not p.exists():
-            continue
-        y = LABELS.index(l)
-        rows.append(dict(dataset="feedback", split="feedback", class_folder=CLASSES[y], filename=p.name,
-                         path=str(p), y=y, mask_path=None, crop=False, source="feedback",
-                         group=f"feedback/load/{getattr(r, 'load_id', r.crop_id)}",
-                         trigger=getattr(r, "trigger", None), student_version=getattr(r, "student_version", None)))
-    df = pd.DataFrame(rows)
-    print(f"feedback: {len(df)} usable of {n0} rows ({(~keep).sum()} unlabelled or mixed loads dropped)")
-    return df
+    for path, y in used:
+        r = by_path.get(str(Path(path).resolve()), {})
+        rows.append(dict(dataset="feedback", split="feedback", class_folder=CLASSES[y], filename=Path(path).name,
+                         path=str(path), y=y, mask_path=None, crop=False, source="feedback",
+                         group=f"feedback/load/{r.get('load_id') or Path(path).stem}",
+                         trigger=r.get("trigger"), student_version=r.get("student_version")))
+    return pd.DataFrame(rows, columns=["dataset", "split", "class_folder", "filename", "path", "y", "mask_path",
+                                       "crop", "source", "group", "trigger", "student_version"])
+
+
+def val_test_hashes(roots):
+    """sha256 of every val/test image of the given dataset folders (feedback leak guard)."""
+    from student.common import file_hashes
+    out = set()
+    for root in roots:
+        out |= file_hashes(find_dataset_root(root))
+    return out
 
 
 # ===========================================================================
@@ -481,7 +492,7 @@ def run_update(datasets, out_dir, version, feedback_dir=None, n_aug=2, cache_dir
     frames = [index_split_dataset(root, name, masks, crop) if name != "bin" else index_bin_dataset(root)
               for name, (root, masks, crop) in datasets.items()]
     if feedback_dir:
-        fb = index_feedback(feedback_dir)
+        fb = index_feedback(feedback_dir, val_test_hashes([root for root, _, _ in datasets.values()]))
         if len(fb):
             frames.append(fb)
     all_df = pd.concat(frames, ignore_index=True)
@@ -518,7 +529,7 @@ def _main(argv=None):
     ap.add_argument("--plate", help="dataset_C_v2 folder (cropped with the D masks)")
     ap.add_argument("--gray", help="dataset_D_v2_balanced folder")
     ap.add_argument("--bin", help="dataset_bin folder (format 2, already cropped)")
-    ap.add_argument("--feedback", help="feedback folder (format 4)")
+    ap.add_argument("--feedback", help="hitl.py feedback folder (contains feedback.csv)")
     ap.add_argument("--masks", help="masks folder (default: found inside --gray)")
     ap.add_argument("--n_aug", type=int, default=2)
     a = ap.parse_args(argv)
