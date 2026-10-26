@@ -53,6 +53,47 @@ python multi_item.py --webcam
 python multi_item.py --reference empty.jpg --frame scene.jpg --student_dir ... --model_path ... --save out.jpg
 ```
 
+## Collecting training data from the bin camera
+
+The student trains on crops from the bin's own camera. `capture.py` saves each
+item's crop exactly as the detector makes it on the bin (box + 10% padding, gray
+128 outside the item), plus the full frame and the item's mask.
+
+```bash
+python capture.py --out ../../bin_captures --lighting daylight
+```
+
+| Key | Does |
+|---|---|
+| `r` | capture the empty-plate reference (clear the plate first) |
+| `d` / `w` | save the item on the plate as dry / wet |
+| `n` | next physical item (new item ID) |
+| `u` | undo the last save |
+| `q` | quit |
+
+A save is refused when the plate is still moving, when there is not exactly one
+item, or when one item ID is saved under both labels.
+
+**How to collect:**
+- **Many different items**: 100+ distinct items per class beats many photos of a few.
+- **A few photos per item** (2-4): move or turn it between saves, then press `n`.
+- **Vary conditions across sessions** (`--lighting daylight`, `lamp`, `dim`...). Each run is a session.
+- Start with **300-500 photos per class**.
+
+Then build the dataset, **split by item** (every photo of an item in one split,
+so test items are never seen in training):
+
+```bash
+python split_bin_dataset.py --captures ../../bin_captures --out ../../dataset_bin
+```
+
+`--test_items items.txt` pins a fixed list of item IDs to test, so the test set
+stays the same when the dataset is rebuilt with more captures. The result is the
+layout `student/` reads with `--variant bin`: `dataset_bin/{train,val,test}/{dry waste,wet waste}/`,
+plus `manifest.csv` (item, session, lighting per photo), `report.md` and `masks/`.
+
+`test_capture.py` checks the whole flow on synthetic frames, without a camera.
+
 ## Synthetic tests (until we have real bin photos)
 
 `synth.py` pastes real waste cut-outs (dataset D masks) onto fake plates
