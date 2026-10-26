@@ -304,6 +304,36 @@ def build_training_views(extractor, train_df, n_aug=2):
 # ===========================================================================
 # 3. The teacher
 # ===========================================================================
+class LinearHead:
+    """StandardScaler + logistic regression as plain numpy arrays.
+
+    Saved teachers hold only these arrays (no pickled scikit-learn objects), so they load
+    and give identical results on any scikit-learn version, or without scikit-learn at all.
+    """
+
+    def __init__(self, mean, scale, coef, intercept):
+        self.mean = np.asarray(mean, np.float64)
+        self.scale = np.asarray(scale, np.float64)
+        self.coef = np.asarray(coef, np.float64).ravel()
+        self.intercept = float(np.asarray(intercept).ravel()[0])
+
+    @classmethod
+    def from_sklearn(cls, pipe):
+        sc, lr = pipe[0], pipe[-1]
+        return cls(sc.mean_, sc.scale_, lr.coef_, lr.intercept_)
+
+    def decision_function(self, X):
+        return ((np.asarray(X, np.float64) - self.mean) / self.scale) @ self.coef + self.intercept
+
+    def to_dict(self):
+        return {"type": "standard_scaler+logistic_regression", "mean": self.mean, "scale": self.scale,
+                "coef": self.coef, "intercept": self.intercept}
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(d["mean"], d["scale"], d["coef"], d["intercept"])
+
+
 def _make_clf(C):
     from sklearn.linear_model import LogisticRegression
     from sklearn.pipeline import make_pipeline
@@ -342,9 +372,10 @@ class Teacher:
                 l = log_loss(y_val, clf.predict_proba(X_val)[:, 1], labels=[0, 1])
                 if best is None or l < best[0]:
                     best = (l, c, clf)
-            _, self.C, self.clf = best
+            _, self.C, clf = best
         else:
-            self.C, self.clf = C, _make_clf(C).fit(X, y)
+            self.C, clf = C, _make_clf(C).fit(X, y)
+        self.clf = LinearHead.from_sklearn(clf)
         self.temperature = fit_temperature(self.logit(X_val), y_val)
         self.trained_on = trained_on or {}
         return self
@@ -380,10 +411,10 @@ class Teacher:
         import sklearn
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        joblib.dump({"classifier": self.clf, "C": self.C, "temperature": self.temperature,
+        joblib.dump({"classifier": self.clf.to_dict(), "C": self.C, "temperature": self.temperature,
                      "backbone": self.backbone, "crop_settings": self.crop_settings,
                      "teacher_version": self.version, "trained_on": self.trained_on,
-                     "labels": LABELS, "classes": CLASSES, "sklearn_version": sklearn.__version__,
+                     "labels": LABELS, "classes": CLASSES, "fitted_with_sklearn": sklearn.__version__,
                      "created": _dt.datetime.now().isoformat(timespec="seconds")}, path)
         return path
 
@@ -392,7 +423,10 @@ class Teacher:
         import joblib
         d = joblib.load(path)
         t = cls(d["teacher_version"])
-        t.clf, t.C, t.temperature = d["classifier"], d.get("C"), d["temperature"]
+        clf = d["classifier"]
+        # plain arrays (current format); an older file holds a pickled sklearn Pipeline
+        t.clf = LinearHead.from_dict(clf) if isinstance(clf, dict) else LinearHead.from_sklearn(clf)
+        t.C, t.temperature = d.get("C"), d["temperature"]
         t.backbone, t.crop_settings, t.trained_on = d["backbone"], d["crop_settings"], d.get("trained_on", {})
         return t
 
@@ -486,7 +520,8 @@ def evaluate(name, p_wet, df):
 def run_update(datasets, out_dir, version, feedback_dir=None, n_aug=2, cache_dir=None, extractor=None):
     """datasets: {name: (root, masks_dir or None, crop: bool)}. Train = all train splits +
     feedback; val = all val splits (C and the temperature are chosen there). Writes
-    soft_labels_<dataset>_<version>.csv per dataset (+ feedback) and <version>.joblib."""
+    soft_labels_<dataset>_<version>.csv per dataset (+ feedback), one combined
+    soft_labels_<version>.csv for the student, and <version>.joblib."""
     out_dir = Path(out_dir)
     ext = extractor or FeatureExtractor(cache_dir=cache_dir or out_dir / "cache")
     frames = [index_split_dataset(root, name, masks, crop) if name != "bin" else index_bin_dataset(root)
@@ -510,9 +545,20 @@ def run_update(datasets, out_dir, version, feedback_dir=None, n_aug=2, cache_dir
 
     z_oof = out_of_fold_logits(X, y, g, v, t.C)
     tables = pd.concat([train.assign(_z=z_oof), val.assign(_z=t.logit(Xv)), test.assign(_z=t.logit(Xt))])
+    per_dataset = []
     for name, part in tables.groupby("dataset"):
-        write_soft_labels(soft_label_table(part, part._z.values, t.temperature, version),
-                          out_dir / f"soft_labels_{name}_{version}.csv")
+        tab = soft_label_table(part, part._z.values, t.temperature, version)
+        write_soft_labels(tab, out_dir / f"soft_labels_{name}_{version}.csv")
+        per_dataset.append(tab)
+    # one combined file for the student (update_student.py --soft_labels takes one file)
+    combined = pd.concat(per_dataset, ignore_index=True)
+    key = combined.split + "|" + combined.class_folder + "|" + combined.filename.map(lambda f: os.path.splitext(f)[0])
+    if key.duplicated().any():
+        print(f"warning: not writing soft_labels_{version}.csv: {key.duplicated().sum()} file names repeat across "
+              f"datasets (e.g. C and D together); use the per-dataset files")
+    else:
+        write_soft_labels(combined, out_dir / f"soft_labels_{version}.csv")
+        print(f"soft_labels_{version}.csv: {len(combined)} rows ({', '.join(f'{n}: {len(x)}' for n, x in tables.groupby('dataset'))})")
     results = [dict(dataset=name, **evaluate(version, t.wet_prob(Xt[(test.dataset == name).values]),
                                              test[test.dataset == name]))
                for name in test.dataset.unique()]
