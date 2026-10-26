@@ -27,19 +27,25 @@ EVAL_PAD = (0.10, 0.10)
 TRAIN_PAD = (0.05, 0.30)
 MIN_MASK_FRAC = 0.01       # masks covering less than this are failed cut-outs: keep the whole image
 
-EVAL_TF = transforms.Compose([
-    transforms.Resize((IMG_SIZE, IMG_SIZE)),
-    transforms.ToTensor(),
-    transforms.Normalize(MEAN, STD),
-])
+def eval_tf(size=IMG_SIZE):
+    return transforms.Compose([
+        transforms.Resize((size, size)),
+        transforms.ToTensor(),
+        transforms.Normalize(MEAN, STD),
+    ])
 
-TRAIN_TF = transforms.Compose([
-    transforms.RandomResizedCrop(IMG_SIZE, scale=(0.7, 1.0), ratio=(0.85, 1.18)),
-    transforms.RandomHorizontalFlip(),
-    transforms.ColorJitter(0.2, 0.2, 0.2),
-    transforms.ToTensor(),
-    transforms.Normalize(MEAN, STD),
-])
+
+def train_tf(size=IMG_SIZE):
+    return transforms.Compose([
+        transforms.RandomResizedCrop(size, scale=(0.7, 1.0), ratio=(0.85, 1.18)),
+        transforms.RandomHorizontalFlip(),
+        transforms.ColorJitter(0.2, 0.2, 0.2),
+        transforms.ToTensor(),
+        transforms.Normalize(MEAN, STD),
+    ])
+
+
+EVAL_TF, TRAIN_TF = eval_tf(), train_tf()      # the 224 px defaults
 
 
 def build_model(pretrained):
@@ -78,9 +84,12 @@ class SplitDataset(torch.utils.data.Dataset):
 
     With masks_dir (<masks_dir>/<split>/<class>/<stem>.png), every image is first
     cropped to its item with a padding drawn from pad = (low, high), so training
-    and evaluation see the same framing as the detector's crops on the bin."""
+    and evaluation see the same framing as the detector's crops on the bin.
 
-    def __init__(self, data_dir, split, transform, masks_dir=None, pad=EVAL_PAD, seed=0):
+    extra = [(path, label), ...] adds images from elsewhere (human-labelled bin crops).
+    They are the detector's crops already, so they are never cropped again."""
+
+    def __init__(self, data_dir, split, transform, masks_dir=None, pad=EVAL_PAD, seed=0, extra=()):
         from pathlib import Path
         self.transform = transform
         self.masks_dir = Path(masks_dir) if masks_dir else None
@@ -101,6 +110,8 @@ class SplitDataset(torch.utils.data.Dataset):
             missing = sum(not self._mask_path(p, y).exists() for p, y in self.items)
             if missing:
                 print(f"warning: {missing} of {len(self.items)} {split} images have no mask; they are used uncropped")
+        self.no_crop = {Path(p) for p, _ in extra}
+        self.items += [(Path(p), y) for p, y in extra]
 
     def _mask_path(self, path, label):
         return self.masks_dir / self.split / CLASSES[label] / (path.stem + ".png")
@@ -112,12 +123,118 @@ class SplitDataset(torch.utils.data.Dataset):
         path, label = self.items[i]
         with Image.open(path) as im:
             im = im.convert("RGB")
-        if self.masks_dir is not None:
+        if self.masks_dir is not None and path not in self.no_crop:
             mask_path = self._mask_path(path, label)
             mask = Image.open(mask_path) if mask_path.exists() else None
             lo, hi = self.pad
             im = crop_to_item(im, mask, lo if lo == hi else float(self.rng.uniform(lo, hi)))
         return self.transform(im), label
+
+
+def _class_folder(value):
+    """'dry' / 'wet' / 'dry waste' / 'wet waste' -> 'dry waste' / 'wet waste'."""
+    v = str(value).strip().lower()
+    for cls in CLASSES:
+        if v in (cls, cls.split()[0]):
+            return cls
+    raise ValueError(f"unknown class {value!r}")
+
+
+def _stem(name):
+    from pathlib import PurePosixPath
+    return PurePosixPath(str(name).replace("\\", "/")).stem
+
+
+class SoftLabels:
+    """The teacher's calibrated P(wet) per image, from a soft-label CSV.
+
+    Matched on (split, class folder, file name without extension): two different images
+    can share a file name, but not within one split and class. Two layouts are read:
+      agreed:   split, class_folder, filename, teacher_wet_prob [, teacher_version]
+      notebook: path, split, label (dry/wet), teacher_wet_prob   (teacher/ branch, v0)
+    Train soft labels should be out-of-fold; this loader cannot check that."""
+
+    def __init__(self, csv_path):
+        import csv
+        with open(csv_path, newline="", encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+        if not rows:
+            raise SystemExit(f"{csv_path} is empty")
+        cols = set(rows[0])
+        if "teacher_wet_prob" not in cols or "split" not in cols:
+            raise SystemExit(f"{csv_path}: needs split and teacher_wet_prob; found {sorted(cols)}")
+        if {"class_folder", "filename"} <= cols:
+            cls_of, name_of = (lambda r: r["class_folder"]), (lambda r: r["filename"])
+        elif {"label", "path"} <= cols:
+            cls_of, name_of = (lambda r: r["label"]), (lambda r: r["path"])
+        else:
+            raise SystemExit(f"{csv_path}: needs class_folder+filename or label+path; found {sorted(cols)}")
+        self.p, self.duplicates = {}, 0
+        for r in rows:
+            p = float(r["teacher_wet_prob"])
+            if not 0.0 <= p <= 1.0:
+                raise SystemExit(f"{csv_path}: teacher_wet_prob {p} is not a probability")
+            key = (r["split"].strip().lower(), _class_folder(cls_of(r)), _stem(name_of(r)))
+            self.duplicates += key in self.p
+            self.p.setdefault(key, p)
+        self.versions = sorted({r["teacher_version"] for r in rows if r.get("teacher_version")})
+        self.any_split = {}
+        for (split, cls, stem), p in self.p.items():
+            self.any_split.setdefault((cls, stem), p)
+
+    def get(self, split, label, stem):
+        return self.p.get((split, CLASSES[label], stem))
+
+    def get_any_split(self, label, stem):
+        """For human-labelled bin crops, whose split in the teacher's file is not fixed."""
+        return self.any_split.get((CLASSES[label], stem))
+
+
+def file_hashes(data_dir, splits=("val", "test")):
+    """sha256 of every image in the given splits of a dataset folder (for the leak guard)."""
+    import hashlib
+    from pathlib import Path
+    out = set()
+    for split in splits:
+        for cls in CLASSES:
+            folder = Path(data_dir) / split / cls
+            if folder.is_dir():
+                out |= {hashlib.sha256(p.read_bytes()).hexdigest() for p in folder.iterdir() if p.suffix.lower() in IMG_EXTS}
+    return out
+
+
+def load_feedback(root, exclude_hashes=frozenset()):
+    """Human-labelled crops from a hitl.py FeedbackStore folder -> [(path, label)].
+
+    Uses <root>/feedback.csv (crop_file is relative to root). Skipped: rows the human
+    skipped (empty human_label), every row of a load whose human labels mix dry and wet
+    (those loads are logged for the paper, not used as labels), missing files, and any crop
+    whose bytes equal an image in exclude_hashes (the val and test sets must never be
+    trained on; this catches exact copies only, not another photo of the same item)."""
+    import csv
+    import hashlib
+    from pathlib import Path
+    root = Path(root)
+    with open(root / "feedback.csv", newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    by_load = {}
+    for r in rows:
+        if r["human_label"] in ("dry", "wet"):
+            by_load.setdefault(r["load_id"], set()).add(r["human_label"])
+    used, skipped = [], {"no label": 0, "mixed load": 0, "file missing": 0, "same as val/test image": 0}
+    for r in rows:
+        if r["human_label"] not in ("dry", "wet"):
+            skipped["no label"] += 1
+        elif len(by_load[r["load_id"]]) > 1:
+            skipped["mixed load"] += 1
+        elif not (root / r["crop_file"]).is_file():
+            skipped["file missing"] += 1
+        elif exclude_hashes and hashlib.sha256((root / r["crop_file"]).read_bytes()).hexdigest() in exclude_hashes:
+            skipped["same as val/test image"] += 1
+        else:
+            used.append((root / r["crop_file"], LABELS.index(r["human_label"])))
+    print(f"feedback: {len(rows)} rows, {len(used)} used, skipped {skipped}")
+    return used
 
 
 @torch.no_grad()
