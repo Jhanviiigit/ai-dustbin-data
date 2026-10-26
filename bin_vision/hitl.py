@@ -21,7 +21,14 @@ is saved for the teacher.
                                    from this)
                      feedback.csv  one row per human-labelled item
                      crops/        the crop the student saw, for each labelled item
+                                   (also the crop the human is shown, via crop_for)
                      frames/       the full camera frame of each reviewed load
+
+Crops: an item labelled by the DropCounter when it landed carries that crop
+(item.crop); it is shown, saved and marked from_drop = 1, because cutting it
+again from the final frame could include an item that landed on top later.
+Other items are cut from the final frame (from_drop = 0), which is also the
+frame the student classified them in.
 
 Loads that end MIXED or SEPARATE ("please separate") are logged in loads.csv but
 produce no labels: the user splits them and each item is then sorted on its own.
@@ -41,7 +48,16 @@ LOAD_FIELDS = ["load_id", "timestamp", "student_version", "n_items", "compositio
                "decision", "trigger", "human_labels", "final_action"]
 FEEDBACK_FIELDS = ["crop_id", "load_id", "timestamp", "student_version", "item_index", "box",
                    "student_label", "student_confidence", "load_composition", "decision", "trigger",
-                   "human_label", "crop_file"]
+                   "human_label", "crop_file", "from_drop"]
+
+
+def crop_for(frame_bgr, item):
+    """(crop, from_drop): the crop the student classified this item from. Items labelled
+    when they landed keep that crop; others are cut from frame_bgr, the frame they were
+    classified in."""
+    if getattr(item, "crop", None) is not None:
+        return item.crop, 1
+    return item_crop(frame_bgr, item), 0
 
 
 @dataclass
@@ -152,12 +168,14 @@ class FeedbackStore:
             for i, (item, human) in enumerate(zip(items, human_labels), start=1):
                 crop_id = f"{load_id}-{i}"
                 crop_file = f"crops/{crop_id}.jpg"
-                cv2.imwrite(os.path.join(self.root, crop_file), item_crop(frame_bgr, item), [cv2.IMWRITE_JPEG_QUALITY, 95])
+                crop, from_drop = crop_for(frame_bgr, item)
+                cv2.imwrite(os.path.join(self.root, crop_file), crop, [cv2.IMWRITE_JPEG_QUALITY, 95])
                 rows.append({"crop_id": crop_id, "load_id": load_id, "timestamp": now.isoformat(timespec="seconds"),
                              "student_version": self.student_version, "item_index": i, "box": " ".join(map(str, item.box)),
                              "student_label": item.label, "student_confidence": f"{item.confidence:.4f}",
                              "load_composition": decision.composition, "decision": decision.action,
-                             "trigger": trigger or "", "human_label": human, "crop_file": crop_file})
+                             "trigger": trigger or "", "human_label": human, "crop_file": crop_file,
+                             "from_drop": from_drop})
             self._append(self.feedback_csv, FEEDBACK_FIELDS, rows)
         return load_id
 

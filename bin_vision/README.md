@@ -79,8 +79,13 @@ dry+wet → separate, a skipped item → hand the load back.
 | File | One row per | Columns |
 |---|---|---|
 | `loads.csv` | load, reviewed or not | `load_id, timestamp, student_version, n_items, composition, load_confidence, decision, trigger, human_labels, final_action` |
-| `feedback.csv` | human-labelled item | `crop_id, load_id, timestamp, student_version, item_index, box, student_label, student_confidence, load_composition, decision, trigger, human_label, crop_file` |
-| `crops/` | human-labelled item | the crop the student saw (for the teacher) |
+| `feedback.csv` | human-labelled item | `crop_id, load_id, timestamp, student_version, item_index, box, student_label, student_confidence, load_composition, decision, trigger, human_label, crop_file, from_drop` |
+| `crops/` | human-labelled item | the crop the student saw, which is also the crop the human was shown (for the teacher) |
+
+`from_drop = 1`: the item was labelled by the drop counter when it landed, and the
+saved crop is the one taken at that moment. It stays clean even if another item
+later landed on top, so it can be trained on even when its box overlaps another
+item's. `from_drop = 0`: cut from the final frame, the frame it was classified in.
 | `frames/` | reviewed load | the full camera frame |
 
 `summarize(folder, window=50)` gives, per block of loads, the human-request rate

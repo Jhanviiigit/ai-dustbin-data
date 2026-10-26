@@ -55,6 +55,7 @@ class Item:
     mask: np.ndarray = field(repr=False)
     label: str = ""                # "dry" / "wet"
     confidence: float = 0.0
+    crop: np.ndarray = field(default=None, repr=False)   # set by DropCounter: the crop classified at landing
 
 
 @dataclass
@@ -255,7 +256,8 @@ class DropCounter:
     one more drop. Two items dropped one after another count 2 even if they
     end up touching. Given a classify function, each new item is cropped from
     its new region and labelled right away, while it is still alone; these
-    labelled items are kept in drop_items. Call reset() after the plate tilts.
+    labelled items, each with the crop it was labelled from (item.crop), are
+    kept in drop_items. Call reset() after the plate tilts.
     """
 
     def __init__(self, detector, settle_frames=3, motion_level=20, motion_frac=0.004, min_new_frac=0.004):
@@ -293,6 +295,9 @@ class DropCounter:
                     item = _item_from_mask(new, frame_bgr.shape[:2])
                     if item is not None:
                         item.label, item.confidence = classify(frame_bgr, item)
+                        # Keep the crop the student just saw: later items may land on top,
+                        # so re-cutting it from a later frame would no longer show this item alone.
+                        item.crop = item_crop(frame_bgr, item)
                         self.drop_items.append(item)
             self.settled_fg = fg
         return self.drops

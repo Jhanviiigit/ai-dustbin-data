@@ -25,8 +25,8 @@ import time
 
 import cv2
 
-from hitl import FeedbackStore, KeyboardAsker, ReviewPolicy, resolve, summarize
-from multi_item import (DEFAULT_RULE, DropCounter, ItemDetector, assess, draw, item_crop,
+from hitl import FeedbackStore, KeyboardAsker, ReviewPolicy, crop_for, resolve, summarize
+from multi_item import (DEFAULT_RULE, DropCounter, ItemDetector, assess, draw,
                         load_student, make_classify)
 
 
@@ -81,7 +81,8 @@ if __name__ == "__main__":
                 trigger = policy.review(decision)
                 human, final = None, decision.action
                 if trigger:
-                    human = asker.ask([item_crop(frame, it) for it in decision.items],
+                    # the human sees exactly the crop the student classified
+                    human = asker.ask([crop_for(frame, it)[0] for it in decision.items],
                                       "audit check" if trigger == "audit" else "not sure")
                     final = resolve(human)
                 load_id = store.record(frame, decision, trigger, human, final)

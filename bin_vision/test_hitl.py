@@ -121,6 +121,56 @@ check(sum(b["human_requests"] for b in blocks) == sum(r["trigger"] == "low_confi
       "summarize() counts every low-confidence request")
 for b in blocks:
     print("   ", b)
+check(all(r["from_drop"] in ("0", "1") for r in feedback), "feedback.csv has from_drop on every row")
+
+print("Covered items keep the crop they were labelled from:")
+import cv2
+import numpy as np
+from hitl import crop_for
+from multi_item import item_crop
+
+seen = {}                                  # id(item) -> the crop the student was given
+
+
+def recording_stand_in(frame, item):
+    seen[id(item)] = item_crop(frame, item)
+    return stand_in(frame, item)
+
+
+store2 = FeedbackStore(tempfile.mkdtemp(prefix="hitl_test_"), "stand-in-v1")
+exact, shown_same, saved_same, flagged, would_differ, n_cases = 0, 0, 0, 0, 0, 0
+for k in range(12):
+    labels = [rng.choice(["dry", "wet"]), rng.choice(["dry", "wet"])]
+    reference, frames, truths = maker.make_sequence(labels, touching=True)        # second item lands against the first
+    detector = ItemDetector()
+    detector.set_reference(reference)
+    counter = DropCounter(detector)
+    for frame, truth in zip(frames, truths):
+        truth_ref[0] = truth
+        counter.update(frame, recording_stand_in)
+    final = frames[-1]
+    decision = assess(final, detector.detect(final), recording_stand_in, 0.6, None, counter.drop_items)
+    if len(counter.drop_items) < 2 or decision.items is not counter.drop_items and \
+            list(decision.items) != list(counter.drop_items):
+        continue                           # the counter missed a drop: not this case
+    n_cases += 1
+    first = counter.drop_items[0]
+    exact += first.crop is not None and np.array_equal(first.crop, seen[id(first)])
+    shown, from_drop = crop_for(final, first)
+    shown_same += np.array_equal(shown, first.crop) and from_drop == 1
+    would_differ += not np.array_equal(item_crop(final, first), first.crop)
+    load_id = store2.record(final, decision, "audit", labels, resolve(labels))
+    rows = [r for r in csv.DictReader(open(os.path.join(store2.root, "feedback.csv"), encoding="utf-8"))
+            if r["load_id"] == load_id]
+    saved = cv2.imread(os.path.join(store2.root, rows[0]["crop_file"]))
+    saved_same += saved.shape == first.crop.shape and np.abs(saved.astype(int) - first.crop.astype(int)).mean() < 3
+    flagged += rows[0]["from_drop"] == "1"
+check(n_cases >= 6, f"{n_cases} of 12 touching loads were labelled at drop time")
+check(exact == n_cases, "each item keeps exactly the crop the student classified")
+check(shown_same == n_cases, "the human is shown that same crop (from_drop = 1)")
+check(saved_same == n_cases, "the saved crop is that crop (up to JPEG)")
+check(flagged == n_cases, "feedback.csv marks it from_drop = 1")
+check(would_differ > 0, f"re-cutting from the final frame would have changed {would_differ} of {n_cases} crops (the old bug)")
 
 print(f"\n{'ALL CHECKS PASSED' if not failures else f'{len(failures)} CHECK(S) FAILED'}  (files in {root})")
 sys.exit(1 if failures else 0)
