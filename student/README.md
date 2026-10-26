@@ -67,11 +67,13 @@ The student never asks the teacher anything while classifying, and nothing calls
 the detector (and the update script when it retrains).
 
 The teacher (`teacher/` on its branch, Vibha's part) is DINOv2 ViT-B/14 features plus a
-logistic regression that is refit off the bin. Its notebook exports soft labels for
-datasets C v2 and D v2 balanced. As of that branch these are still **in-sample** (the
-teacher was fitted on the train images, so its train soft labels are almost the hard
-labels) and were computed on **whole images, not crops**; both are on the teacher side's
-list to change.
+logistic regression that is refit off the bin. As of its latest commit it writes the agreed
+soft-label format, with **out-of-fold** train labels (checked: it is now wrong on 32 of 1,902
+gray and 12 of 1,940 plate train images, where its earlier in-sample files were wrong on
+none), and per its README it frames crops with this folder's `common.py` (`crop_to_item`,
+the paddings, the preprocessing), so teacher and student see identical crops. That makes
+`student/common.py` a shared file: the teacher imports names from it, so renaming or
+removing them breaks the teacher.
 
 ## Model
 
@@ -195,7 +197,7 @@ The teacher does not send weights. It exports **soft labels**, its calibrated P(
 image, and the student trains on them:
 
 ```bash
-python student/train.py --variant gray --data_root . --soft_labels teacher/soft_labels_dataset_D_v2_balanced.csv
+python student/train.py --variant gray --data_root .     --soft_labels teacher/soft_labels_dataset_D_v2_balanced_teacher_v1_gray.csv
 ```
 
 For an image with a teacher probability the loss is
@@ -206,21 +208,32 @@ labels, so a distilled run and a plain run are compared like for like.
 
 - **Matching:** on (split, class folder, file name without extension), so two images with
   the same file name in different splits or classes do not collide. Both the agreed layout
-  (`split, class_folder, filename, teacher_wet_prob, teacher_version`) and the layout the
-  teacher notebook writes today (`path, split, label, teacher_wet_prob`) are read. On the
+  (`split, class_folder, filename, teacher_wet_prob, teacher_version`) and the older layout
+  of the teacher notebook (`path, split, label, teacher_wet_prob`) are read. On the latest
   real files every train, val and test image matches (gray 1902/403/411, plate 1940/416/416).
-- **The current teacher CSVs are in-sample** (see above), so distillation adds little until
-  the teacher exports out-of-fold train soft labels. The loader cannot check this.
+- **Out-of-fold matters:** soft labels from a teacher that saw the image add nothing over the
+  true label. The latest teacher files are out-of-fold, but most are still very confident
+  (91% of gray and 96% of plate train labels are above 0.99), so distillation mostly agrees
+  with the true labels and differs on the few the teacher gets wrong or is unsure about. The
+  loader cannot check out-of-fold-ness itself.
 - `teacher_version` is stored in the weights.
 
 ## Human feedback crops
 
 `--feedback_dir <FeedbackStore folder>` (the folder `hitl.py` writes: `feedback.csv` and
-`crops/`) adds the human-labelled crops to **train/ only**. Skipped, with the counts printed:
-items the human skipped, **every item of a load whose human labels mix dry and wet** (those
-loads are for the paper, not labels), missing files, and crops that are byte-for-byte copies
-of a val or test image. A feedback crop takes a teacher probability if the soft-label file
-has its `crop_id` (any split); otherwise it uses the human label only.
+`crops/`) adds the human-labelled crops to **train/ only**. Every item the human labelled is
+used, **including the items of loads they called dry+wet**: each crop was labelled on its
+own, and those are the loads the student was unsure about, so they are among the most
+useful examples. Skipped, with the counts printed:
+- items the human skipped (empty `human_label`), and missing files;
+- a crop whose `box` **overlaps another item's box in the same load** (touching items: the
+  crop may contain part of its neighbour, so its label is not reliable). Boxes that only
+  touch along an edge do not count, and the other item counts even if the human skipped it.
+  A box that cannot be read is kept and counted;
+- a crop that is a byte-for-byte copy of a val or test image.
+
+A feedback crop takes a teacher probability if the soft-label file has its `crop_id` (any
+split); otherwise it uses the human label only.
 
 Caveat: feedback crops may show a physical item that is in the bin **test** set (another
 photo of it is not caught by the duplicate check). Pin the test items
@@ -326,7 +339,6 @@ Not done
 - Anything on real bin photos: `dataset_bin` does not exist yet, so `experiments.py` and
   the bin fine-tune have not run on real data.
 - The gray vs plate decision (and whether the detector will ever send plate crops).
-- Out-of-fold, crop-based soft labels from the teacher (teacher side).
 - TensorRT, FP16 and power measurements on the Nano.
 - The update script that decides when to retrain (every K labels), keeps `models.csv`, and
   copies weights to the bin; it will call `update_student.py` and `promote.py`.

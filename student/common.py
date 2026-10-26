@@ -203,37 +203,64 @@ def file_hashes(data_dir, splits=("val", "test")):
     return out
 
 
+def _box(text):
+    """'x y w h' (as hitl.py writes the item's box) -> (x0, y0, x1, y1), or None if unreadable."""
+    import re
+    n = [float(v) for v in re.findall(r"-?\d+(?:\.\d+)?", str(text))]
+    return (n[0], n[1], n[0] + n[2], n[1] + n[3]) if len(n) == 4 and n[2] > 0 and n[3] > 0 else None
+
+
+def _overlap(a, b):
+    """True if two boxes share some area (boxes that only touch along an edge do not)."""
+    return min(a[2], b[2]) - max(a[0], b[0]) > 0 and min(a[3], b[3]) - max(a[1], b[1]) > 0
+
+
 def load_feedback(root, exclude_hashes=frozenset()):
     """Human-labelled crops from a hitl.py FeedbackStore folder -> [(path, label)].
 
-    Uses <root>/feedback.csv (crop_file is relative to root). Skipped: rows the human
-    skipped (empty human_label), every row of a load whose human labels mix dry and wet
-    (those loads are logged for the paper, not used as labels), missing files, and any crop
-    whose bytes equal an image in exclude_hashes (the val and test sets must never be
-    trained on; this catches exact copies only, not another photo of the same item)."""
+    Uses <root>/feedback.csv (crop_file is relative to root). Every item the human labelled
+    is used, including the items of loads the human called dry+wet: each crop was labelled
+    on its own, and those are the loads the student was unsure about, the most useful ones.
+
+    Skipped:
+      * items the human skipped (empty human_label), and missing files;
+      * a crop whose box overlaps another item's box in the same load (touching items: the
+        crop may contain part of its neighbour, so its label is not reliable). Boxes that only
+        touch along an edge do not count. A box that cannot be read is kept and counted;
+      * a crop whose bytes equal an image in exclude_hashes (the val and test sets must never
+        be trained on; this catches exact copies only, not another photo of the same item)."""
     import csv
     import hashlib
     from pathlib import Path
     root = Path(root)
     with open(root / "feedback.csv", newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
-    by_load = {}
-    for r in rows:
-        if r["human_label"] in ("dry", "wet"):
-            by_load.setdefault(r["load_id"], set()).add(r["human_label"])
-    used, skipped = [], {"no label": 0, "mixed load": 0, "file missing": 0, "same as val/test image": 0}
-    for r in rows:
+    boxes = {}                                          # load_id -> [(row index, box)] of every item
+    for i, r in enumerate(rows):
+        b = _box(r.get("box", ""))
+        if b is not None:
+            boxes.setdefault(r["load_id"], []).append((i, b))
+    used = []
+    skipped = {"no label": 0, "file missing": 0, "box overlaps another item": 0, "same as val/test image": 0}
+    unreadable = 0
+    for i, r in enumerate(rows):
+        mine = _box(r.get("box", ""))
         if r["human_label"] not in ("dry", "wet"):
             skipped["no label"] += 1
-        elif len(by_load[r["load_id"]]) > 1:
-            skipped["mixed load"] += 1
         elif not (root / r["crop_file"]).is_file():
             skipped["file missing"] += 1
+        elif mine is not None and any(j != i and _overlap(mine, b) for j, b in boxes.get(r["load_id"], [])):
+            skipped["box overlaps another item"] += 1
         elif exclude_hashes and hashlib.sha256((root / r["crop_file"]).read_bytes()).hexdigest() in exclude_hashes:
             skipped["same as val/test image"] += 1
         else:
+            unreadable += mine is None
             used.append((root / r["crop_file"], LABELS.index(r["human_label"])))
-    print(f"feedback: {len(rows)} rows, {len(used)} used, skipped {skipped}")
+    mixed = sum(1 for load in {r["load_id"] for r in rows}
+                if len({r["human_label"] for r in rows if r["load_id"] == load and r["human_label"] in ("dry", "wet")}) > 1)
+    print(f"feedback: {len(rows)} rows, {len(used)} used, skipped {skipped}"
+          f"{f', {unreadable} used with an unreadable box' if unreadable else ''}; "
+          f"{mixed} dry+wet load(s) kept")
     return used
 
 
