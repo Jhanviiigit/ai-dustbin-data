@@ -34,6 +34,54 @@ The detector (`bin_vision/multi_item.py`) loads this with
 "0.8" should mean about 80% likely to be right. The human-in-the-loop threshold depends
 on this. The temperature is stored inside the weights file, so one file is enough.
 
+## Who the student talks to
+
+The student is a function: a crop goes in, a label and a confidence come out. It never
+calls another part of the system, and nothing calls it except the detector.
+
+**Detector (built, tested with a dummy model)**
+
+| Direction | What passes | Format |
+|---|---|---|
+| Detector → student | one crop per item | uint8 BGR numpy array, the item's box + 10% padding, gray 128 outside the item |
+| Student → detector | the classification | `{"label": "dry" \| "wet", "confidence", "dry_prob", "wet_prob", "inference_ms"}`, confidence calibrated |
+
+The detector adds `student/` to `sys.path`, imports `classifier` and calls
+`WasteClassifier(model_path=...)`, so the code stays flat files, not a package. It calls
+`classify_image()` once per item (and again for each drop as it lands); the student
+keeps no state between calls. Which items agree, mixed loads and drop counting are the
+detector's logic, not the student's.
+
+**Gray and plate versions.** The team's hand-off table lists the crop background as
+"Proposed: gray (dataset D style); plate (dataset C) is the alternative", so there are two
+student models to match two possible detector crops:
+
+| Student | Trained on | Matches a detector that sends |
+|---|---|---|
+| `gray` | `dataset_D_v2_balanced` | gray-128 crops, **the only crop `item_crop()` produces today** |
+| `plate` | `dataset_C_v2` | crops that keep the real plate pixels |
+
+The `plate` crop does not exist in the detector code on `feature/multi-item-detection`
+(checked on 2026-10-25; no flag or second function). If a plate version of the detector is
+added, point `--model_path` at the matching student; a mismatch (a plate model on gray
+crops, or the reverse) is exactly what the cross-check in `evaluate.py` measures. Either
+way the interface above is the same, so switching version is only a different weights file.
+
+**Teacher (planned, not built; the teacher is another teammate's part)**
+
+| Direction | What passes | Status |
+|---|---|---|
+| Human feedback → teacher | the detector's crop, the human's label, the student's guess and confidence | Proposed. The student returns the guess and confidence but does not log or send anything. |
+| Teacher → student | new weights, same MobileNetV2 design, same `classify_image()` interface | Proposed. Loading them is a file swap. |
+
+What the teacher's weights must follow:
+- **File format:** a checkpoint dict with `state_dict` and `temperature` (as `train.py`
+  saves). A bare `state_dict` does not load.
+- **Same preprocessing:** 224 px resize and ImageNet normalisation (`EVAL_TF` in `common.py`).
+- **Own temperature:** run `calibrate.py` on the new weights before they go live.
+
+The student never asks the teacher anything while classifying.
+
 ## Model
 
 MobileNetV2, starting from ImageNet weights, with a 2-class head (`dry`, `wet`; the
@@ -170,7 +218,10 @@ Not done
   column (backslashes normalised, so it also works on Linux/Kaggle). The `path` column
   is the file before cleaning and does not match renamed RealWaste files.
 - The gray vs plate decision.
-- Who calibrates after a teacher update.
+- Who calibrates after a teacher update, and whether `WasteClassifier` should also accept
+  a bare `state_dict` plus a separate temperature (it does not today).
+- Logging the feedback records (crop, human label, guess, confidence) for the teacher:
+  nobody owns this yet.
 - Handing over the `.pt` files (`*.pt` is gitignored; they will go in a release).
 
 ## Notes
