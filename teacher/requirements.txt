@@ -1,3 +1,12 @@
-numpy>=2.0
-pillow>=10.0
-rembg[cpu]>=2.0    # only needed for remove_background.py
+﻿# teacher/ dependencies (Colab has all of these preinstalled). No OpenCV: install the detector's
+# opencv-python alongside without conflict.
+torch>=2.0
+torchvision>=0.15
+numpy
+pandas
+pillow
+scikit-learn>=1.3      # only for fitting; saved teachers are plain arrays and load on any version
+scipy
+joblib
+matplotlib               # notebook crop preview only
+# DINOv2 weights are fetched by torch.hub from github.com/facebookresearch/dinov2 on first use
