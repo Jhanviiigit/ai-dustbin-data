@@ -226,7 +226,11 @@ def load_feedback(root, exclude_hashes=frozenset()):
       * items the human skipped (empty human_label), and missing files;
       * a crop whose box overlaps another item's box in the same load (touching items: the
         crop may contain part of its neighbour, so its label is not reliable). Boxes that only
-        touch along an edge do not count. A box that cannot be read is kept and counted;
+        touch along an edge do not count. A box that cannot be read is kept and counted.
+        EXCEPT crops with from_drop = 1: those are the crop saved at the moment the item
+        landed, which the student classified and the human was shown, while the item was still
+        alone, so overlap with a later item cannot have contaminated them. A feedback.csv
+        without a from_drop column counts every crop as from_drop = 0 (the overlap rule applies);
       * a crop whose bytes equal an image in exclude_hashes (the val and test sets must never
         be trained on; this catches exact copies only, not another photo of the same item)."""
     import csv
@@ -242,23 +246,27 @@ def load_feedback(root, exclude_hashes=frozenset()):
             boxes.setdefault(r["load_id"], []).append((i, b))
     used = []
     skipped = {"no label": 0, "file missing": 0, "box overlaps another item": 0, "same as val/test image": 0}
-    unreadable = 0
+    unreadable = kept_drop = 0
     for i, r in enumerate(rows):
         mine = _box(r.get("box", ""))
+        overlapped = mine is not None and any(j != i and _overlap(mine, b) for j, b in boxes.get(r["load_id"], []))
+        from_drop = str(r.get("from_drop", "")).strip().lower() in ("1", "true", "yes")
         if r["human_label"] not in ("dry", "wet"):
             skipped["no label"] += 1
         elif not (root / r["crop_file"]).is_file():
             skipped["file missing"] += 1
-        elif mine is not None and any(j != i and _overlap(mine, b) for j, b in boxes.get(r["load_id"], [])):
+        elif overlapped and not from_drop:
             skipped["box overlaps another item"] += 1
         elif exclude_hashes and hashlib.sha256((root / r["crop_file"]).read_bytes()).hexdigest() in exclude_hashes:
             skipped["same as val/test image"] += 1
         else:
             unreadable += mine is None
+            kept_drop += overlapped                     # overlapping boxes, but a clean drop-time crop
             used.append((root / r["crop_file"], LABELS.index(r["human_label"])))
     mixed = sum(1 for load in {r["load_id"] for r in rows}
                 if len({r["human_label"] for r in rows if r["load_id"] == load and r["human_label"] in ("dry", "wet")}) > 1)
     print(f"feedback: {len(rows)} rows, {len(used)} used, skipped {skipped}"
+          f"{f', {kept_drop} overlapping but kept (drop-time crop)' if kept_drop else ''}"
           f"{f', {unreadable} used with an unreadable box' if unreadable else ''}; "
           f"{mixed} dry+wet load(s) kept")
     return used

@@ -58,7 +58,7 @@ What the student receives and hands on:
 | Detector → student | one crop per item: uint8 BGR, the item's box + 10% padding, gray 128 outside the item |
 | Student → detector | the dict above |
 | Bin photos → student | `dataset_bin/{train,val,test}/{dry waste,wet waste}/<crop_id>.jpg` and `manifest.csv` (from the capture tool, `bin_vision/split_bin_dataset.py`; split by item) |
-| Feedback → student | the `hitl.py` folder: `feedback.csv` and `crops/<crop_id>.jpg` (the crop the student saw, plus `human_label`) |
+| Feedback → student | the `hitl.py` folder: `feedback.csv` and `crops/<crop_id>.jpg` (the crop the student classified and the human was shown, `human_label`, and `from_drop`: 1 = cut when the item landed, 0 = cut from the final frame) |
 | Teacher → student | **soft labels, not weights**: a CSV with `split, class_folder, filename, teacher_wet_prob, teacher_logit, teacher_version`, out-of-fold for train |
 | Student → bin | `weights.pt` with its version name and temperature inside |
 | Student → update script | `update.json` (what went in, val numbers, temperature), for `models.csv` |
@@ -229,7 +229,12 @@ useful examples. Skipped, with the counts printed:
 - a crop whose `box` **overlaps another item's box in the same load** (touching items: the
   crop may contain part of its neighbour, so its label is not reliable). Boxes that only
   touch along an edge do not count, and the other item counts even if the human skipped it.
-  A box that cannot be read is kept and counted;
+  A box that cannot be read is kept and counted. **Exception: `from_drop = 1`.** Those crops
+  are the ones saved at the moment the item landed (the crop the student classified and the
+  human was shown), while it was still alone, so a later item landing on top cannot have
+  contaminated them: they are kept even when their boxes overlap, and the printout counts
+  them ("overlapping but kept"). A `feedback.csv` without a `from_drop` column treats every
+  crop as `from_drop = 0`;
 - a crop that is a byte-for-byte copy of a val or test image.
 
 A feedback crop takes a teacher probability if the soft-label file has its `crop_id` (any
