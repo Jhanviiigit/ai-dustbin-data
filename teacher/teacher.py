@@ -188,7 +188,12 @@ def index_feedback(feedback_dir, exclude_hashes=frozenset()) -> pd.DataFrame:
     by_path = {str((feedback_dir / r["crop_file"]).resolve()): r for r in fb.to_dict("records")}
     rows = []
     for path, y in used:
-        r = by_path.get(str(Path(path).resolve()), {})
+        resolved_path = str(Path(path).resolve())
+        r = by_path.get(resolved_path)
+        if not r:
+            raise ValueError(f"no matching row in feedback.csv for crop: {path}")
+        if str(r.get("trigger", "")).strip().lower() == "audit":
+            continue
         rows.append(dict(dataset="feedback", split="feedback", class_folder=CLASSES[y], filename=Path(path).name,
                          path=str(path), y=y, mask_path=None, crop=False, source="feedback",
                          group=f"feedback/load/{r.get('load_id') or Path(path).stem}",
@@ -532,6 +537,8 @@ def run_update(datasets, out_dir, version, feedback_dir=None, n_aug=2, cache_dir
             frames.append(fb)
     all_df = pd.concat(frames, ignore_index=True)
     train = all_df[all_df.split.isin(["train", "feedback"])].reset_index(drop=True)
+    if "trigger" in train.columns:
+        train = train[train["trigger"].astype(str).str.strip().str.lower() != "audit"].reset_index(drop=True)
     val = all_df[all_df.split == "val"].reset_index(drop=True)
     test = all_df[all_df.split == "test"].reset_index(drop=True)
 
