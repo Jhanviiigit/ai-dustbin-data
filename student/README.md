@@ -196,8 +196,14 @@ to rebuild the split. This is Sian's hand-curated copy of `data-organik-v1`: pix
 identical, but 9 images were moved from Organic to Inorganic
 (`20250922_143702`, `_143714`, `_143724`, `_143747`, `_143757`, `_143813`,
 `IMG_20250922_143613`, `_143616`, `_143619`) and 5 Organic images were deleted
-(`1761117174238`, `…261`, `…282`, `…303`, `20250922_143647`). Origin and licence of the original
-photos are still to be filled in (the same open item as `data-organik-v1`).
+(`1761117174238`, `…261`, `…282`, `…303`, `20250922_143647`).
+
+Source of the photos: Mendeley Data, "Dataset waste image classification Organik and
+Inorganic", contributor kevin bagus, Version 1, 5 November 2025, DOI
+[10.17632/t2sy8k4jpj.1](https://data.mendeley.com/datasets/t2sy8k4jpj/1). Smartphone photos
+taken top-down on the Primakara University campus, Denpasar, Bali. Licence **CC BY 4.0**:
+credit the author and indicate changes (here: background removed, cropped, re-labelled and
+curated). Cite it in the paper.
 
 **Rebuild the dataset** (two steps; use the second one's output):
 
