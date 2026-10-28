@@ -12,6 +12,8 @@ Checks:
   - ReviewPolicy: low-confidence loads go to a human; exactly every Xth auto-tilt
     load is audited ("every" mode); "random" mode audits about 1/X
   - resolve(): same class -> tilt, dry+wet -> separate, a skipped item -> remove
+  - the agreed audit rate is 1 in 10; after a restart, resume() keeps "every" at every Xth
+  - load_deployed(): deploy/current's weights, version and threshold (0.6 if none)
   - FeedbackStore: one loads.csv row per load; one feedback.csv row and one crop per
     human-labelled item; a frame only for reviewed loads; summarize() adds up
 
@@ -21,12 +23,13 @@ Usage:
 
 import argparse
 import csv
+import json
 import os
 import random
 import sys
 import tempfile
 
-from hitl import FeedbackStore, ReviewPolicy, resolve, summarize
+from hitl import AUDIT_EVERY, FeedbackStore, ReviewPolicy, load_deployed, resolve, summarize
 from multi_item import DEFAULT_RULE, Decision, DropCounter, ItemDetector, assess
 from synth import ItemPool, SceneMaker, TRUTH_IDS
 
@@ -63,6 +66,35 @@ check(p.review(Decision("MIXED", [], "")) is None, "MIXED is not reviewed")
 r = ReviewPolicy(audit_every=10, mode="random", seed=1)
 n = sum(r.review(tilt) == "audit" for _ in range(5000))
 check(400 <= n <= 600, f"random mode audits about 1/10 ({n} of 5000)")
+check(ReviewPolicy().audit_every == AUDIT_EVERY == 10, "default audit rate: 1 in 10")
+rs = tempfile.mkdtemp(prefix="hitl_resume_")
+st = FeedbackStore(rs, "v1")
+first = ReviewPolicy(audit_every=10)
+for _ in range(7):
+    st.record(None, tilt, first.review(tilt))
+st.record(None, ask, first.review(ask))
+second = ReviewPolicy(audit_every=10).resume(st)
+later = [second.review(tilt) for _ in range(13)]
+check(second.auto_loads == 20 and [i for i, t in enumerate(later, start=8) if t == "audit"] == [10, 20],
+      "after a restart after 7 auto loads, the audits are still loads 10 and 20")
+
+print("Deployed student:")
+dep = tempfile.mkdtemp(prefix="hitl_deploy_")
+try:
+    load_deployed(dep)
+    check(False, "an empty deploy folder is refused")
+except FileNotFoundError:
+    check(True, "an empty deploy folder is refused")
+os.makedirs(os.path.join(dep, "current"))
+open(os.path.join(dep, "current", "weights.pt"), "wb").close()
+info = {"version": "student_u3", "threshold": 0.83, "threshold_source": "val (update.json)"}
+json.dump(info, open(os.path.join(dep, "current", "info.json"), "w"))
+d = load_deployed(dep)
+check(d["version"] == "student_u3" and d["threshold"] == 0.83 and d["weights"].endswith("weights.pt"),
+      "version, threshold and weights from deploy/current (run_update.py's info.json)")
+json.dump({"version": "student_u4", "threshold": None}, open(os.path.join(dep, "current", "info.json"), "w"))
+d = load_deployed(dep)
+check(d["threshold"] == 0.6 and d["threshold_source"] == "fallback 0.6", "no threshold deployed: 0.6")
 
 print("Loads through the store:")
 pool = ItemPool(args.clean, args.masks, "test", seed=7)

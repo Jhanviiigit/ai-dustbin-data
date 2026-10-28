@@ -6,8 +6,8 @@ is saved for the teacher.
 
   ReviewPolicy     decides whether a load goes to a human:
                      "low_confidence"  assess() returned ASK_HUMAN
-                     "audit"           every Xth load the bin would have tilted on
-                                       its own is checked anyway. Audits are the
+                     "audit"           every Xth load (X = 10) the bin would have
+                                       tilted on its own is checked anyway. Audits are the
                                        unbiased measure of the bin's real accuracy,
                                        so a fall in human requests over time can be
                                        shown to be real and not overconfidence.
@@ -23,6 +23,8 @@ is saved for the teacher.
                      crops/        the crop the student saw, for each labelled item
                                    (also the crop the human is shown, via crop_for)
                      frames/       the full camera frame of each reviewed load
+  load_deployed()  the student the update pipeline deployed (deploy/current, written by
+                   update/run_update.py): its weights, version and threshold
 
 Crops: an item labelled by the DropCounter when it landed carries that crop
 (item.crop); it is shown, saved and marked from_drop = 1, because cutting it
@@ -35,6 +37,7 @@ produce no labels: the user splits them and each item is then sorted on its own.
 """
 
 import csv
+import json
 import os
 import random
 from dataclasses import dataclass, field
@@ -46,9 +49,27 @@ from multi_item import item_crop
 
 LOAD_FIELDS = ["load_id", "timestamp", "student_version", "n_items", "composition", "load_confidence",
                "decision", "trigger", "human_labels", "final_action"]
+THRESHOLD_FALLBACK = 0.6      # until a deployed student brings a threshold picked on val
+AUDIT_EVERY = 10              # agreed: 1 in 10 auto-tilt loads is audited
 FEEDBACK_FIELDS = ["crop_id", "load_id", "timestamp", "student_version", "item_index", "box",
                    "student_label", "student_confidence", "load_composition", "decision", "trigger",
                    "human_label", "crop_file", "from_drop"]
+
+
+def load_deployed(deploy_dir):
+    """<deploy_dir>/current/{weights.pt, info.json} -> {"weights", "version", "threshold",
+    "threshold_source", "info_mtime"}. A missing threshold falls back to 0.6."""
+    cur = os.path.join(deploy_dir, "current")
+    weights, info_path = os.path.join(cur, "weights.pt"), os.path.join(cur, "info.json")
+    if not os.path.isfile(weights) or not os.path.isfile(info_path):
+        raise FileNotFoundError(f"no deployed student in {cur} (needs weights.pt and info.json)")
+    with open(info_path, encoding="utf-8") as f:
+        info = json.load(f)
+    threshold = info.get("threshold")
+    return {"weights": weights, "version": info.get("version") or "unknown",
+            "threshold": float(threshold) if threshold is not None else THRESHOLD_FALLBACK,
+            "threshold_source": info.get("threshold_source", "deploy") if threshold is not None else "fallback 0.6",
+            "info_mtime": os.path.getmtime(info_path)}
 
 
 def crop_for(frame_bgr, item):
@@ -63,8 +84,9 @@ def crop_for(frame_bgr, item):
 @dataclass
 class ReviewPolicy:
     """audit_every = X. mode "every": exactly every Xth auto-tilt load; mode
-    "random": each auto-tilt load with probability 1/X (unpredictable to users)."""
-    audit_every: int = 20
+    "random": each auto-tilt load with probability 1/X (unpredictable to users).
+    resume(store) carries the count on after a restart, so "every" stays every Xth."""
+    audit_every: int = AUDIT_EVERY
     mode: str = "every"
     seed: int = 0
     auto_loads: int = field(default=0, init=False)
@@ -73,6 +95,11 @@ class ReviewPolicy:
         if self.audit_every < 1:
             raise ValueError("audit_every must be at least 1")
         self._rng = random.Random(self.seed)
+
+    def resume(self, store):
+        """Start counting from the auto-tilt loads already in the store's loads.csv."""
+        self.auto_loads = store.auto_tilt_loads()
+        return self
 
     def review(self, decision):
         """Trigger name if this load must go to a human, else None. Call once per load."""
@@ -138,6 +165,13 @@ class FeedbackStore:
             return 0
         with open(path, newline="", encoding="utf-8") as f:
             return sum(1 for _ in csv.DictReader(f))
+
+    def auto_tilt_loads(self):
+        """Loads in loads.csv the bin would have tilted on its own (what ReviewPolicy counts)."""
+        if not os.path.exists(self.loads_csv):
+            return 0
+        with open(self.loads_csv, newline="", encoding="utf-8") as f:
+            return sum(r["decision"].startswith("TILT") for r in csv.DictReader(f))
 
     @staticmethod
     def _append(path, fields, rows):
