@@ -53,6 +53,53 @@ python multi_item.py --webcam
 python multi_item.py --reference empty.jpg --frame scene.jpg --student_dir ... --model_path ... --save out.jpg
 ```
 
+## Human-in-the-loop (bin side)
+
+`hitl.py` decides when a human is asked, asks them, and saves what the teacher
+needs. `hitl_demo.py` runs the whole loop on a webcam (the servo is a print-out
+until the main loop and firmware exist).
+
+**When a human is asked** (`ReviewPolicy`):
+
+| Trigger | When | Why |
+|---|---|---|
+| `low_confidence` | `assess()` returned `ASK_HUMAN` (an item below the threshold) | the bin doesn't know |
+| `audit` | every Xth load the bin would have tilted on its own (`--audit_every`, `--audit_mode every` or `random`) | unbiased check of the bin's real accuracy, so a fall in human requests over time can be shown to be real |
+
+`MIXED` and `SEPARATE` loads are not sent to a human: the user is asked to
+separate them, and each item is then sorted on its own.
+
+**Asking** (`KeyboardAsker`): shows each item's crop; `d` dry, `w` wet, `x` skip.
+Any object with `ask(crops) -> ["dry" | "wet" | "", ...]` can replace it (buttons,
+a screen). After the answer, `resolve()` decides: all one class → tilt that way,
+dry+wet → separate, a skipped item → hand the load back.
+
+**What is saved** (`FeedbackStore`, one folder):
+
+| File | One row per | Columns |
+|---|---|---|
+| `loads.csv` | load, reviewed or not | `load_id, timestamp, student_version, n_items, composition, load_confidence, decision, trigger, human_labels, final_action` |
+| `feedback.csv` | human-labelled item | `crop_id, load_id, timestamp, student_version, item_index, box, student_label, student_confidence, load_composition, decision, trigger, human_label, crop_file, from_drop` |
+| `crops/` | human-labelled item | the crop the student saw, which is also the crop the human was shown (for the teacher) |
+
+`from_drop = 1`: the item was labelled by the drop counter when it landed, and the
+saved crop is the one taken at that moment. It stays clean even if another item
+later landed on top, so it can be trained on even when its box overlaps another
+item's. `from_drop = 0`: cut from the final frame, the frame it was classified in.
+| `frames/` | reviewed load | the full camera frame |
+
+`summarize(folder, window=50)` gives, per block of loads, the human-request rate
+and the accuracy on audited loads: the numbers behind "human intervention
+decreases over time".
+
+```bash
+python hitl_demo.py --student_dir ../student --model_path ../student/runs/bin/weights.pt \
+    --feedback ../../feedback --audit_every 20
+```
+
+`test_hitl.py` checks the policy, `resolve()` and the store on synthetic loads,
+without a camera or window.
+
 ## Collecting training data from the bin camera
 
 The student trains on crops from the bin's own camera. `capture.py` saves each
