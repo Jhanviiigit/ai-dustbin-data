@@ -5,9 +5,25 @@ its training, calibration, evaluation, inference and update code. It is built on
 `student` branch.
 
 **Status: the code is complete for the base model, distillation from the teacher, feedback
-crops and the update step, and has been tested on fake data only (the real teacher
-soft-label files were checked against the real datasets). The base model has not been
-trained on the real datasets yet, so there are no results here.**
+crops and the update step. The base model is trained on the Organik gray crops only (see
+"Current training" below), with cross-validated results. Distillation, feedback crops and the
+update step have been tested on fake data only (the real teacher soft-label files were
+checked against the real datasets). Nothing has run on real bin photos yet.**
+
+## Which data to use for what
+
+| Purpose | Use | Where |
+|---|---|---|
+| **Train the student** | `dataset_organik_v2/train` (502 images) | release `data-organik-v2` |
+| Pick the best epoch | `dataset_organik_v2/val` (72) | same |
+| **Check the pipeline** | **`dataset_organik_v2/test`** (72 images, 36 dry and 36 wet; the deployed model never trained on it). Not the headline number: 72 images is too few (5 of the 7 errors are one straw). The headline number is the 5-fold cross-validation result below | same |
+| The trained student | `weights.pt`, version `organik_gray_v2` | release `student-organik_gray_v2` |
+| The teacher's training data | Roboflow and RealWaste (`dataset_C_v2`, `dataset_D_v2_balanced`) | release `data-v2`; **not for the student** |
+
+Do not use: `data-organik-v1` (uncurated and not split), `data-v1` (includes `dataset2`, whose
+origin is unknown), or `dataset_C_v2` / `dataset_D_v2_balanced` to train or test the student
+(the sections below that mention them describe the earlier public-data runs). Details,
+download commands and results: "Current training" below.
 
 ## Scope
 
@@ -24,7 +40,7 @@ The student does one thing: it takes the picture of **one** item and says wet or
 ```python
 from classifier import WasteClassifier
 
-classifier = WasteClassifier(model_path="student/runs/gray/weights.pt")
+classifier = WasteClassifier(model_path="student/runs/organik/weights.pt")
 result = classifier.classify_image(crop_bgr)    # numpy BGR image of ONE item
 # {"label": "dry" | "wet", "confidence": 0.0-1.0,
 #  "dry_prob": ..., "wet_prob": ..., "inference_ms": ...}
@@ -84,6 +100,9 @@ epochs, class-weighted loss, seed 42). The epoch with the best validation accura
 
 ## Gray and plate versions
 
+*Earlier public-data comparison (Roboflow + RealWaste). The student is now trained on the
+Organik gray crops only (see "Current training"); the plate version is not planned.*
+
 The crop the detector hands over has either a gray or a real-plate background. The team's
 hand-off table says "Proposed: gray (dataset D style); plate (dataset C) is the alternative",
 and the student must be trained the way it will be used, so both are prepared. They use
@@ -119,10 +138,13 @@ An empty (zero-size) crop raises a `ValueError`; any other label is rejected by 
 detector with a `ValueError` of its own.
 
 ```bash
-python bin_vision/multi_item.py --webcam --student_dir student --model_path student/runs/gray/weights.pt
+python bin_vision/multi_item.py --webcam --student_dir student --model_path student/runs/organik/weights.pt
 ```
 
 ## Item crops (same framing as the bin)
+
+*This applies to the public datasets. The Organik crops are already cut to the item with the
+detector's framing, so they train with `--variant bin` and no masks.*
 
 On the bin the student never sees a whole photo: the detector sends the item's bounding box
 + 10% padding. The public dataset images are whole photos where the item often fills only a
@@ -156,6 +178,9 @@ are never cropped again.
 
 ## How to run
 
+**For the Organik student, use the commands under "Current training" below.** The block here
+is the earlier public-data run (Roboflow + RealWaste), kept for the comparison.
+
 ```bash
 pip install -r requirements.txt
 
@@ -171,10 +196,98 @@ python student/evaluate.py  --weights student/runs/gray/weights.pt --data_dir da
 
 `test/` is only for final numbers. Run `evaluate.py` once the settings are fixed.
 
+## Current training: Organik gray crops only
+
+Decision (2026-10-28): the student is trained **only** on the Organik / Anorganik photos
+(release `data-organik-v2`: background removed, gray 128, cut to the item), starting from
+ImageNet weights. The public datasets (Roboflow, RealWaste) are for the teacher alone. Gray
+only for now; a raw-background version is decided later by accuracy. Organic is `wet waste`,
+Inorganic is `dry waste`. The crops already have the detector's framing, so they train with
+`--variant bin` (no masks, no cropping).
+
+**Get the data and the model** (private repo: you need access; `gh auth login` first):
+
+```bash
+# the split the student is trained on (646 images; train 502, val 72, test 72)
+gh release download data-organik-v2 --repo Jhanviiigit/ai-dustbin-data --pattern "dataset_organik_v2.zip"
+unzip dataset_organik_v2.zip
+# the trained student (organik_gray_v2, temperature 1.2247 inside the file)
+gh release download student-organik_gray_v2 --repo Jhanviiigit/ai-dustbin-data --pattern "weights.pt" --dir student/runs/organik
+```
+
+The same data release also holds `organik_gray_curated.zip`, the 672 source crops, if you want
+to rebuild the split. This is Sian's hand-curated copy of `data-organik-v1`: pixels are
+identical, but 9 images were moved from Organic to Inorganic
+(`20250922_143702`, `_143714`, `_143724`, `_143747`, `_143757`, `_143813`,
+`IMG_20250922_143613`, `_143616`, `_143619`) and 5 Organic images were deleted
+(`1761117174238`, `…261`, `…282`, `…303`, `20250922_143647`).
+
+Source of the photos: Mendeley Data, "Dataset waste image classification Organik and
+Inorganic", contributor kevin bagus, Version 1, 5 November 2025, DOI
+[10.17632/t2sy8k4jpj.1](https://data.mendeley.com/datasets/t2sy8k4jpj/1). Smartphone photos
+taken top-down on the Primakara University campus, Denpasar, Bali. Licence **CC BY 4.0**:
+credit the author and indicate changes (here: background removed, cropped, re-labelled and
+curated). Cite it in the paper.
+
+**Rebuild the dataset** (for reference only). **The released `dataset_organik_v2.zip` is the
+official split: use it, do not rebuild.** The rebuild is not bit-reproducible across
+machines: on another machine `regroup_organik.py` gave 80 groups instead of 82 and split 127
+images differently, because 166 image pairs sit right at the 0.18 cut and tiny numerical
+differences tip them. Two steps; use the second one's output:
+
+```bash
+python data_prep/split_organik.py   --src organik            --out dataset_organik      # hash + file-order groups; drops an item filed under both classes
+python data_prep/regroup_organik.py --src dataset_organik    --out dataset_organik_v2   # groups by image similarity and re-splits
+```
+
+The first split leaked: the same item photographed in another pose got a different group and
+landed on both sides, which inflated the scores (5-fold 97.7%, and 8 of 78 test images had a
+near-copy in train). `regroup_organik.py` clusters images by ImageNet-feature similarity
+(within each class) and splits whole clusters, so no val or test image has a train image at
+similarity >= 0.90. That is a safeguard, not a proof: the data has no item IDs. v2 split:
+train 502 (170 dry, 332 wet), val 72 and test 72 (36 + 36 each). The loss is class-weighted,
+so train keeps all of the larger class.
+
+**Train** (uses the GPU when CUDA is available; a few minutes on a Colab T4):
+
+```bash
+python student/train.py --variant bin --data_dir dataset_organik_v2 --version organik_gray_v2 --out student/runs/organik
+```
+
+Do **not** run `calibrate.py` on this val set. Every val image is classified correctly, so the
+fit runs to the lower limit (T = 0.05) and makes every prediction look certain (on the first,
+leaky split this raised the test NLL from 0.08 to 0.69). Use the temperature from
+cross-validation instead:
+**T = 1.2247**, written into the weights file (`ckpt["temperature"]`, `ckpt["calibrated"] = True`).
+
+**Results** (5-fold cross-validation on all 646 images, folds split by cluster, run in
+Colab; the notebook is not in this repo). Each fold trains from ImageNet on the other four,
+a slice of them picks the epoch, and the held-out fold is scored:
+
+| | Result |
+|---|---|
+| Accuracy over the 5 folds | 96.75%, std 1.4 (folds 94.6% to 98.4%), 21 errors of 646 |
+| dry | precision 0.951, recall 0.963, F1 0.957 |
+| wet | precision 0.978, recall 0.970, F1 0.974 |
+| AUC-ROC | 0.994 |
+| Temperature fitted on the pooled out-of-fold predictions | 1.22; ECE 0.017 -> 0.008 (cross-fitted 0.008), NLL unchanged |
+
+Freezing the first N modules of `model.features` (same folds): N = 0 96.75% (21 errors),
+N = 10 96.44% (23), N = 15 97.22% (18), N = 19 (head only) 93.35% (43). 0, 10 and 15 are
+within noise, so everything is fine-tuned.
+
+The single deployed model (`organik_gray_v2`, epoch 6) scored 90.3% on its 72 test images
+(1 wet and 6 dry errors; 5 of the 7 are one green plastic straw read as a leaf, so the colour
+leans towards wet). Its wrong answers had confidence 0.53 to 0.74 and the correct ones a
+median of 0.99, so a human-review threshold near 0.8 would have caught all 7 (and sent 15% of
+items to a person). That is read off 72 images; do not tune on it. 72 images is too few for
+a headline number: quote the cross-validation.
+
 ## Training stages
 
-1. **Base model.** ImageNet weights, fine-tuned on the public datasets above
-   (`--variant gray`, and `plate` for the comparison).
+1. **Base model.** ImageNet weights, fine-tuned on the Organik crops (above). The
+   `gray` / `plate` runs on the public datasets below are the teacher's data and are only
+   kept for comparison.
 2. **Bin photos (once `dataset_bin` exists).** Photos from the bin's own camera adapt the
    base model to the real camera, lighting and plate. Continue from the base weights:
 
@@ -194,7 +307,9 @@ starting guess for fine-tuning, not tuned.
 ## Distillation from the teacher
 
 The teacher does not send weights. It exports **soft labels**, its calibrated P(wet) per
-image, and the student trains on them:
+image, and the student trains on them. The existing soft-label files cover the public
+datasets only; the Organik images need a new file from the teacher before the student can
+distil on them (the deployed `organik_gray_v2` was trained on the true labels only):
 
 ```bash
 python student/train.py --variant gray --data_root .     --soft_labels teacher/soft_labels_dataset_D_v2_balanced_teacher_v1_gray.csv
@@ -339,8 +454,8 @@ Done
 - ONNX export checked against PyTorch and ONNX Runtime.
 
 Not done
-- Real training on C v2 and D v2 balanced, and the test results. The hand-off with the
-  detector needs a re-check with real weights.
+- Training on C v2 and D v2 balanced (not planned: the student uses Organik only). The
+  hand-off with the detector needs a re-check with the real `organik_gray_v2` weights.
 - Anything on real bin photos: `dataset_bin` does not exist yet, so `experiments.py` and
   the bin fine-tune have not run on real data.
 - The gray vs plate decision (and whether the detector will ever send plate crops).

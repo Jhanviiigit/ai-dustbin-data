@@ -4,3 +4,4 @@ rembg[cpu]>=2.0    # only needed for remove_background.py
 torch>=2.2         # student model (student/)
 torchvision>=0.17
 onnx>=1.15        # only for student/export_onnx.py
+scipy>=1.10        # only for data_prep/regroup_organik.py

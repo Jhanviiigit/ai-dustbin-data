@@ -68,7 +68,7 @@ Run it on a webcam (press `r` with the plate empty, `q` to quit):
 
 ```bash
 python bin_vision/multi_item.py --webcam                     # count-only mode, no model needed
-python bin_vision/multi_item.py --webcam --student_dir student --model_path student/runs/gray/weights.pt
+python bin_vision/multi_item.py --webcam --student_dir student --model_path student/runs/organik/weights.pt
 ```
 
 ## How the detector plugs into the student
@@ -78,7 +78,7 @@ and the student never sees a whole photo.
 
 ```python
 from classifier import WasteClassifier                      # student/classifier.py
-student = WasteClassifier(model_path="student/runs/gray/weights.pt")
+student = WasteClassifier(model_path="student/runs/organik/weights.pt")
 result = student.classify_image(crop_bgr)
 # {"label": "dry" | "wet", "confidence": 0.0-1.0, "dry_prob": ..., "wet_prob": ..., "inference_ms": ...}
 ```
@@ -96,9 +96,10 @@ The detector loads the student with `--student_dir student --model_path <weights
 (module `classifier` by default) and also accepts `"dry waste"` / `"wet waste"` labels.
 
 **Training matches the bin.** The student is trained and evaluated on item crops cut
-the same way: each dataset image is cropped to its item's mask box (random 5-30%
-padding for training, exactly 10% for val/test). The masks ship with
-`dataset_D_v2_balanced.zip` and fit both datasets. See [`student/README.md`](student/README.md).
+the same way as the detector's: the Organik crops (release `data-organik-v2`) are already
+cut to the item's box + 10% padding on gray 128. The student trains **only** on them; the
+public datasets below (Roboflow, RealWaste) are the teacher's. See
+[`student/README.md`](student/README.md).
 
 ## Results so far
 
@@ -127,8 +128,10 @@ logic on its own:
 
 More detail, including the item-count warning results, is in [`bin_vision/README.md`](bin_vision/README.md).
 
-**Student:** code is ready and checked end to end (1-epoch smoke run). Real training
-runs and test results are not done yet.
+**Student:** trained on the Organik gray crops only (`organik_gray_v2`, release
+`student-organik_gray_v2`). 5-fold cross-validation, grouped by image similarity: 96.75%
+(std 1.4), AUC 0.994. Nothing has run on real bin photos yet. Details and download commands:
+[`student/README.md`](student/README.md).
 
 ## Download the datasets
 
@@ -141,8 +144,11 @@ Datasets are attached to this repo's **Releases** as zip files, not committed to
 | `dataset_D_v2_balanced.zip` | **The same images as C v2, background removed** (U²-Net, gray 128) + masks. Compare this with C: only the background differs | 2,716 (1,902 / 403 / 411) |
 | `dataset_D_v2.zip` | All cleaned images, background removed, **not balanced** (22% wet) + masks | 6,015 (4,214 / 898 / 903) |
 
-To train the student you need **`dataset_D_v2_balanced.zip` and `dataset_C_v2.zip`**
-(the masks for cropping are in the D zip). Unzip both into the repo folder:
+These are the **teacher's** data. The **student** is trained on the Organik crops instead:
+`gh release download data-organik-v2 --repo Jhanviiigit/ai-dustbin-data --pattern "dataset_organik_v2.zip"`
+(see [`student/README.md`](student/README.md)). For the earlier public-data comparison runs
+you need **`dataset_D_v2_balanced.zip` and `dataset_C_v2.zip`** (the masks for cropping are
+in the D zip). Unzip both into the repo folder:
 
 ```bash
 gh release download data-v2 --repo Jhanviiigit/ai-dustbin-data --pattern "dataset_D_v2_balanced.zip" --pattern "dataset_C_v2.zip"
