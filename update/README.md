@@ -1,8 +1,9 @@
 # update: the human-in-the-loop update pipeline
 
 Turns human feedback from the bin into a better student, safely. Built in phases:
-**phase 1 (the shared pool)** and **phase 2 (feedback → pool)** are done; phase 3
-(teacher, student, gate, deploy, `models.csv` in `run_update.py`) is next.
+**phase 1 (the shared pool)**, **phase 2 (feedback → pool)** and **phase 3 (`run_update.py`:
+teacher, student, gate, deploy, `models.csv`)** are done. Phase 3 calls
+`update_student.py --pool`, which the student side is adding.
 
 | File | What it does |
 |---|---|
@@ -13,8 +14,10 @@ Turns human feedback from the bin into a better student, safely. Built in phases
 | `trigger.py` | Whether there is enough new training data for an update |
 | `augment.py` | Balances `train` with capped, reproducible augmented copies |
 | `ingest.py` | Ties them together: dry run, or `--commit` |
+| `metrics.py` | Errors, accuracy, balanced accuracy, per-class P/R/F1, Wilson intervals, paired comparison + McNemar |
+| `run_update.py` | One full update: ingest → teacher → student → gate (`student/promote.py`) → deploy → `models.csv` |
 | `make_sample_pool.py` | A sample pool for building readers against |
-| `test_pool.py`, `test_ingest.py` | Tests for every rule |
+| `test_pool.py`, `test_ingest.py`, `test_run_update.py` | Tests for every rule |
 
 ## Feedback → pool (`ingest.py`)
 
@@ -45,6 +48,28 @@ contrast, saturation, seeded from the copy's `crop_id`); the ledger marks the ro
 
 **Public data:** `--public_index` (CSV of `path, phash`) writes `pool/public_exclude.csv`, the
 public images that near-copy a pool test image. The teacher leaves these out of training.
+
+## One full update (`run_update.py`)
+
+```bash
+python update/run_update.py --pool pool --feedback feedback --current student/releases/student_v1/weights.pt  # first time
+python update/run_update.py --pool pool --feedback feedback      # later: the current one is deploy/current
+python update/run_update.py --pool pool                          # carry on after the teacher ran
+```
+
+| Step | What happens |
+|---|---|
+| 1. ingest | `ingest.py --commit`, only when the last update has finished. Trigger says wait → exit 2 |
+| 2. teacher | Waits (exit 3) for `runs/teacher_uN/soft_labels.csv` (run on Colab), then checks it: a row for every `train` `crop_id`, none for val/test, probabilities in [0, 1] |
+| 3. student | `update_student.py --current … --version student_uN --pool … --soft_labels … --out runs/student_uN` |
+| 4. gate | `promote.py --pool`: ≤ 2 more errors than the current **and** the best shipped version on `test_fixed`, and on `test_audit` from 30 images; `test_hard` reported only |
+| 5. deploy | accepted → `deploy/current/{weights.pt, info.json}` (version, threshold, temperature); the old one → `deploy/previous` |
+| 6. record | a row in `models.csv`, deployed **or** rejected, with test errors, accuracies, the paired margin and the reasons |
+
+Run it again at any point: it carries on from the stage stored in `pool/updates/update_N.json`
+(`"run"`). Update N's names are `teacher_uN` and `student_uN`; a rejected name is never reused.
+Threshold for the bin: the student's `update.json` `"threshold"` (picked on val); 0.6 until
+the student writes one (`models.csv` says which).
 
 ## The pool
 
