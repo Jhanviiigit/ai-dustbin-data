@@ -181,10 +181,28 @@ only for now; a raw-background version is decided later by accuracy. Organic is 
 Inorganic is `dry waste`. The crops already have the detector's framing, so they train with
 `--variant bin` (no masks, no cropping).
 
-**Build the dataset** (two steps; use the second one's output):
+**Get the data and the model** (private repo: you need access; `gh auth login` first):
 
 ```bash
-python data_prep/split_organik.py   --src grey/organik       --out dataset_organik      # hash + file-order groups; drops an item filed under both classes
+# the split the student is trained on (646 images; train 502, val 72, test 72)
+gh release download data-organik-v2 --repo Jhanviiigit/ai-dustbin-data --pattern "dataset_organik_v2.zip"
+unzip dataset_organik_v2.zip
+# the trained student (organik_gray_v2, temperature 1.2247 inside the file)
+gh release download student-organik_gray_v2 --repo Jhanviiigit/ai-dustbin-data --pattern "weights.pt" --dir student/runs/organik
+```
+
+The same data release also holds `organik_gray_curated.zip`, the 672 source crops, if you want
+to rebuild the split. This is Sian's hand-curated copy of `data-organik-v1`: pixels are
+identical, but 9 images were moved from Organic to Inorganic
+(`20250922_143702`, `_143714`, `_143724`, `_143747`, `_143757`, `_143813`,
+`IMG_20250922_143613`, `_143616`, `_143619`) and 5 Organic images were deleted
+(`1761117174238`, `…261`, `…282`, `…303`, `20250922_143647`). Origin and licence of the original
+photos are still to be filled in (the same open item as `data-organik-v1`).
+
+**Rebuild the dataset** (two steps; use the second one's output):
+
+```bash
+python data_prep/split_organik.py   --src organik            --out dataset_organik      # hash + file-order groups; drops an item filed under both classes
 python data_prep/regroup_organik.py --src dataset_organik    --out dataset_organik_v2   # groups by image similarity and re-splits
 ```
 
