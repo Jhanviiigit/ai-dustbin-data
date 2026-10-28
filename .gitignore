@@ -4,6 +4,7 @@ realwaste/
 cleaned_dataset/
 dataset_*/
 *.zip
+*.pt
 
 __pycache__/
 *.pyc
