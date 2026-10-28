@@ -172,7 +172,7 @@ are never cropped again.
 | `classifier.py` | `WasteClassifier` (the interface above) |
 | `evaluate.py` | Test results: accuracy overall and per source (and per lighting on bin photos), confusion matrix, ECE. Can be pointed at another dataset's test set as a cross-check. `metrics()` is reused by the scripts below. |
 | `update_student.py` | **One command for an update**: current weights + soft labels + feedback -> a calibrated new student |
-| `promote.py` | Release gate: ship new weights only if calibrated and at least as accurate as the current ones on the bin test set |
+| `promote.py` | Release gate: ship new weights only if calibrated and at most 2 errors worse than the current and the best shipped version (paired, same images) |
 | `experiments.py` | public-only vs bin-only vs public-then-bin, several seeds each, scored on the bin |
 | `export_onnx.py` | ONNX export (calibrated probabilities as output) for TensorRT on the Nano |
 
@@ -368,7 +368,7 @@ python student/update_student.py --current student/releases/student_v1/weights.p
     --feedback_dir bin_feedback --soft_labels teacher/soft_labels_v2.csv
 
 python student/promote.py --candidate student/runs/student_v2/weights.pt \
-    --current student/releases/student_v1/weights.pt --data_dir dataset_bin     # the gate
+    --current student/releases/student_v1/weights.pt --pool pool     # the gate (or --data_dir dataset_bin)
 ```
 
 `update_student.py` runs `train.py --variant bin` from the current weights (on
@@ -397,13 +397,19 @@ Rules, and how they are kept:
 Every training run has a version name (`--version`, default `<variant>-s<seed>`) stored in
 the weights.
 
-Accepted by `promote.py` only if the candidate was **calibrated**, has a **new version
-name**, and its **bin test accuracy is >= the current weights'**. It then copies the
-weights to `student/releases/<version>/` with an `info.json`. It also prints NLL, ECE and
-the paired counts (images only the candidate gets right, and only the current gets right).
-Exit code 0 accepted, 1 rejected; `--dry_run` only prints. "At least as good" means
-accuracy, as agreed; with a small test set a one-image gap is noise, so read the paired
-counts.
+Accepted by `promote.py` only if the candidate was **calibrated**, has a **version name
+never shipped**, and on every gated test set makes **at most 2 more errors than the current
+weights and than the best version ever shipped** (every `releases/*/weights.pt`, re-scored on
+the same images, so the comparison is paired). Comparing with the best shipped stops slow
+drift. Gated sets with `--pool`: `test_fixed`, and `test_audit` once it has 30 images;
+`test_hard` is reported only. With `--data_dir`: `dataset_bin/test`. The first release (nothing
+shipped) needs calibration only.
+
+It prints, per set, errors, accuracy and balanced accuracy with Wilson intervals, per-class
+precision/recall, and the paired counts with McNemar's p (from `update/metrics.py`). On
+acceptance it copies the weights to `student/releases/<version>/` with an `info.json`;
+`--report` writes everything as JSON. Exit code 0 accepted, 1 rejected; `--dry_run` only
+prints.
 
 ## Public vs bin data
 
@@ -460,8 +466,8 @@ Not done
   the bin fine-tune have not run on real data.
 - The gray vs plate decision (and whether the detector will ever send plate crops).
 - TensorRT, FP16 and power measurements on the Nano.
-- The update script that decides when to retrain (every K labels), keeps `models.csv`, and
-  copies weights to the bin; it will call `update_student.py` and `promote.py`.
+- `update_student.py --pool` (train on Organik + `pool/train`, soft labels by `crop_id`):
+  `update/run_update.py` already calls it with these arguments.
 - Handing over the `.pt` files (`*.pt` is gitignored; they will go in a release).
 
 ## Notes
