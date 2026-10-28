@@ -10,6 +10,21 @@ crops and the update step. The base model is trained on the Organik gray crops o
 update step have been tested on fake data only (the real teacher soft-label files were
 checked against the real datasets). Nothing has run on real bin photos yet.**
 
+## Which data to use for what
+
+| Purpose | Use | Where |
+|---|---|---|
+| **Train the student** | `dataset_organik_v2/train` (502 images) | release `data-organik-v2` |
+| Pick the best epoch | `dataset_organik_v2/val` (72) | same |
+| **Test the pipeline, final numbers** | **`dataset_organik_v2/test`** (72 images, 36 dry and 36 wet; the deployed model never trained on it) | same |
+| The trained student | `weights.pt`, version `organik_gray_v2` | release `student-organik_gray_v2` |
+| The teacher's training data | Roboflow and RealWaste (`dataset_C_v2`, `dataset_D_v2_balanced`) | release `data-v2`; **not for the student** |
+
+Do not use: `data-organik-v1` (uncurated and not split), `data-v1` (includes `dataset2`, whose
+origin is unknown), or `dataset_C_v2` / `dataset_D_v2_balanced` to train or test the student
+(the sections below that mention them describe the earlier public-data runs). Details,
+download commands and results: "Current training" below.
+
 ## Scope
 
 The student does one thing: it takes the picture of **one** item and says wet or dry.
@@ -25,7 +40,7 @@ The student does one thing: it takes the picture of **one** item and says wet or
 ```python
 from classifier import WasteClassifier
 
-classifier = WasteClassifier(model_path="student/runs/gray/weights.pt")
+classifier = WasteClassifier(model_path="student/runs/organik/weights.pt")
 result = classifier.classify_image(crop_bgr)    # numpy BGR image of ONE item
 # {"label": "dry" | "wet", "confidence": 0.0-1.0,
 #  "dry_prob": ..., "wet_prob": ..., "inference_ms": ...}
@@ -85,6 +100,9 @@ epochs, class-weighted loss, seed 42). The epoch with the best validation accura
 
 ## Gray and plate versions
 
+*Earlier public-data comparison (Roboflow + RealWaste). The student is now trained on the
+Organik gray crops only (see "Current training"); the plate version is not planned.*
+
 The crop the detector hands over has either a gray or a real-plate background. The team's
 hand-off table says "Proposed: gray (dataset D style); plate (dataset C) is the alternative",
 and the student must be trained the way it will be used, so both are prepared. They use
@@ -120,10 +138,13 @@ An empty (zero-size) crop raises a `ValueError`; any other label is rejected by 
 detector with a `ValueError` of its own.
 
 ```bash
-python bin_vision/multi_item.py --webcam --student_dir student --model_path student/runs/gray/weights.pt
+python bin_vision/multi_item.py --webcam --student_dir student --model_path student/runs/organik/weights.pt
 ```
 
 ## Item crops (same framing as the bin)
+
+*This applies to the public datasets. The Organik crops are already cut to the item with the
+detector's framing, so they train with `--variant bin` and no masks.*
 
 On the bin the student never sees a whole photo: the detector sends the item's bounding box
 + 10% padding. The public dataset images are whole photos where the item often fills only a
@@ -157,6 +178,9 @@ are never cropped again.
 
 ## How to run
 
+**For the Organik student, use the commands under "Current training" below.** The block here
+is the earlier public-data run (Roboflow + RealWaste), kept for the comparison.
+
 ```bash
 pip install -r requirements.txt
 
@@ -175,7 +199,7 @@ python student/evaluate.py  --weights student/runs/gray/weights.pt --data_dir da
 ## Current training: Organik gray crops only
 
 Decision (2026-10-28): the student is trained **only** on the Organik / Anorganik photos
-(release `data-organik-v1`: background removed, gray 128, cut to the item), starting from
+(release `data-organik-v2`: background removed, gray 128, cut to the item), starting from
 ImageNet weights. The public datasets (Roboflow, RealWaste) are for the teacher alone. Gray
 only for now; a raw-background version is decided later by accuracy. Organic is `wet waste`,
 Inorganic is `dry waste`. The crops already have the detector's framing, so they train with
@@ -279,7 +303,9 @@ starting guess for fine-tuning, not tuned.
 ## Distillation from the teacher
 
 The teacher does not send weights. It exports **soft labels**, its calibrated P(wet) per
-image, and the student trains on them:
+image, and the student trains on them. The existing soft-label files cover the public
+datasets only; the Organik images need a new file from the teacher before the student can
+distil on them (the deployed `organik_gray_v2` was trained on the true labels only):
 
 ```bash
 python student/train.py --variant gray --data_root .     --soft_labels teacher/soft_labels_dataset_D_v2_balanced_teacher_v1_gray.csv
