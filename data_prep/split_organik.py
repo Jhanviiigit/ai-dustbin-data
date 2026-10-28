@@ -1,5 +1,9 @@
 """Split the Organik/Anorganik gray crops into train/val/test, grouping photos of the same item.
 
+Step 1 of 2. The groups here (perceptual hash + file order) miss the same item in another
+pose, so this split leaks and its scores are too good. Use the output only as the input of
+regroup_organik.py, which regroups by image similarity and writes the split to train on.
+
 Input: a folder with `Organic/` and `Inorganic/` (organik_gray_crops.zip, background gray 128).
 Organic -> `wet waste`, Inorganic -> `dry waste`.
 
