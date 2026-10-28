@@ -38,6 +38,7 @@ parser.add_argument("--model",        default="u2net",           help="rembg mod
 parser.add_argument("--max_side",     type=int,   default=512)
 parser.add_argument("--min_coverage", type=float, default=0.01,  help="Drop images whose mask covers less than this fraction")
 parser.add_argument("--gray",         type=int,   default=128,   help="Background gray level")
+parser.add_argument("--reuse_from",   default=None,              help="An earlier output folder of this script: masks for identical images (same SHA-256) are reused instead of recomputed")
 args = parser.parse_args()
 
 
@@ -53,6 +54,14 @@ rows = [r for r in csv.DictReader(open(os.path.join(args.src, "manifest.csv"), e
 session = new_session(args.model)
 print(f"[BG] {len(rows)} images, model '{args.model}'")
 
+reuse = {}
+if args.reuse_from:
+    for old in csv.DictReader(open(os.path.join(args.reuse_from, "manifest.csv"), encoding="utf-8")):
+        old_mask = os.path.join(args.reuse_from, "masks", os.path.splitext(old["new_path"])[0] + ".png")
+        if os.path.exists(long_path(old_mask)):
+            reuse[old["sha256"]] = old_mask
+    print(f"[BG] {len(reuse)} masks available to reuse from '{args.reuse_from}'")
+
 t0 = time.time()
 done = 0
 for k, r in enumerate(rows, start=1):
@@ -66,7 +75,10 @@ for k, r in enumerate(rows, start=1):
         # rembg applies EXIF rotation internally, so apply it here too or the mask comes back rotated
         img = ImageOps.exif_transpose(Image.open(long_path(os.path.join(args.src, r["new_path"])))).convert("RGB")
         img.thumbnail((args.max_side, args.max_side))
-        mask = remove(img, session=session, only_mask=True).convert("L")
+        if r["sha256"] in reuse:
+            mask = Image.open(long_path(reuse[r["sha256"]])).convert("L")
+        else:
+            mask = remove(img, session=session, only_mask=True).convert("L")
         if mask.size != img.size:
             mask = mask.resize(img.size, Image.BILINEAR)
         composite = Image.new("RGB", img.size, (args.gray,) * 3)
@@ -79,8 +91,10 @@ for k, r in enumerate(rows, start=1):
             composite.save(long_path(out_img), quality=95)
         done += 1
 
-    r["mask_coverage"] = round(float(np.asarray(mask, dtype=np.float32).mean() / 255), 4)
-    r["bg_status"] = "keep" if r["mask_coverage"] >= args.min_coverage else "drop (mask nearly empty)"
+    coverage = float(np.asarray(mask, dtype=np.float32).mean() / 255)
+    r["mask_coverage"] = round(coverage, 4)
+    # Decide on the unrounded value, the same one used when the image was written
+    r["bg_status"] = "keep" if coverage >= args.min_coverage else "drop (mask nearly empty)"
     r["bg_path"] = os.path.join(stem + ".jpg") if r["bg_status"] == "keep" else ""
 
     if k % 200 == 0 or k == len(rows):
