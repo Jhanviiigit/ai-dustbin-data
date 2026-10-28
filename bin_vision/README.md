@@ -64,7 +64,7 @@ until the main loop and firmware exist).
 | Trigger | When | Why |
 |---|---|---|
 | `low_confidence` | `assess()` returned `ASK_HUMAN` (an item below the threshold) | the bin doesn't know |
-| `audit` | every Xth load the bin would have tilted on its own (`--audit_every`, `--audit_mode every` or `random`) | unbiased check of the bin's real accuracy, so a fall in human requests over time can be shown to be real |
+| `audit` | every Xth load the bin would have tilted on its own: **X = 10** as agreed (`--audit_every`, `--audit_mode every` or `random`). The count carries on across restarts (`ReviewPolicy.resume(store)` reads `loads.csv`) | unbiased check of the bin's real accuracy, so a fall in human requests over time can be shown to be real |
 
 `MIXED` and `SEPARATE` loads are not sent to a human: the user is asked to
 separate them, and each item is then sorted on its own.
@@ -93,9 +93,17 @@ and the accuracy on audited loads: the numbers behind "human intervention
 decreases over time".
 
 ```bash
-python hitl_demo.py --student_dir ../student --model_path ../student/runs/bin/weights.pt \
-    --feedback ../../feedback --audit_every 20
+python hitl_demo.py --student_dir ../student --deploy ../deploy --feedback ../../feedback
+python hitl_demo.py --student_dir ../student --model_path ../student/runs/bin/weights.pt --feedback ../../feedback
 ```
+
+**Which student, which threshold.** With `--deploy`, the bin uses what the update pipeline
+deployed: `deploy/current/weights.pt`, and from `deploy/current/info.json` (written by
+`update/run_update.py`) its `version` (logged as `student_version`) and its `threshold`
+(picked on val by the student update; 0.6 until one is deployed). When a new student is
+deployed, the bin switches to it between loads (when the plate is cleared), so a load is never
+judged half by one student and half by another. `--threshold` overrides the deployed one;
+`load_deployed(deploy_dir)` gives the same in code.
 
 `test_hitl.py` checks the policy, `resolve()` and the store on synthetic loads,
 without a camera or window.
