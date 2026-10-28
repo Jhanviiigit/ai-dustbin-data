@@ -16,7 +16,7 @@ checked against the real datasets). Nothing has run on real bin photos yet.**
 |---|---|---|
 | **Train the student** | `dataset_organik_v2/train` (502 images) | release `data-organik-v2` |
 | Pick the best epoch | `dataset_organik_v2/val` (72) | same |
-| **Test the pipeline, final numbers** | **`dataset_organik_v2/test`** (72 images, 36 dry and 36 wet; the deployed model never trained on it) | same |
+| **Check the pipeline** | **`dataset_organik_v2/test`** (72 images, 36 dry and 36 wet; the deployed model never trained on it). Not the headline number: 72 images is too few (5 of the 7 errors are one straw). The headline number is the 5-fold cross-validation result below | same |
 | The trained student | `weights.pt`, version `organik_gray_v2` | release `student-organik_gray_v2` |
 | The teacher's training data | Roboflow and RealWaste (`dataset_C_v2`, `dataset_D_v2_balanced`) | release `data-v2`; **not for the student** |
 
@@ -229,7 +229,11 @@ taken top-down on the Primakara University campus, Denpasar, Bali. Licence **CC 
 credit the author and indicate changes (here: background removed, cropped, re-labelled and
 curated). Cite it in the paper.
 
-**Rebuild the dataset** (two steps; use the second one's output):
+**Rebuild the dataset** (for reference only). **The released `dataset_organik_v2.zip` is the
+official split: use it, do not rebuild.** The rebuild is not bit-reproducible across
+machines: on another machine `regroup_organik.py` gave 80 groups instead of 82 and split 127
+images differently, because 166 image pairs sit right at the 0.18 cut and tiny numerical
+differences tip them. Two steps; use the second one's output:
 
 ```bash
 python data_prep/split_organik.py   --src organik            --out dataset_organik      # hash + file-order groups; drops an item filed under both classes

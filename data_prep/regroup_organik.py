@@ -22,7 +22,10 @@ How:
   4. Check: the nearest train image of every val/test image is reported (cosine similarity of the
      same features). With the default --dist no val/test image has a train image at >= 0.90.
 
-Same seed, same input, same output.
+Same seed and same input give the same output on one machine, but not across machines: 166 image
+pairs sit right at the --dist cut, and tiny numerical differences (80 groups instead of 82, 127
+images split differently on another machine) tip them. The released dataset_organik_v2.zip is
+the official split; use it instead of rebuilding.
 """
 import argparse
 import csv
