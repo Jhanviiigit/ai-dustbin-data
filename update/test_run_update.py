@@ -205,7 +205,7 @@ ck = torch.load(a.current, weights_only=True)
 answer = os.environ["FAKE_ANSWER"]
 b = ck["state_dict"]["classifier.1.bias"]
 b.copy_(torch.tensor([50.0, 0.0] if answer == "dry" else [0.0, 50.0]))
-ck.update(version=a.version, calibrated=True, teacher_version="teacher_u")
+ck.update(version=a.version, calibrated=True, teacher_version="teacher_v2")
 os.makedirs(a.out, exist_ok=True)
 torch.save(ck, os.path.join(a.out, "weights.pt"))
 if os.environ.get("FAKE_THRESHOLD"):
@@ -229,18 +229,19 @@ def run_update(*extra, answer="dry", threshold=None):
 
 def write_soft(update_n, skip=0, extra_ids=()):
     pool = Pool(rpool.root)
-    d = os.path.join(W, "runs", f"teacher_u{update_n}")
+    d = os.path.join(W, "runs", f"teacher_v{update_n + 1}")
     os.makedirs(d, exist_ok=True)
     rows = [r["crop_id"] for r in pool.rows_in("train")][skip:] + list(extra_ids)
     with open(os.path.join(d, "soft_labels.csv"), "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["crop_id", "teacher_logit", "teacher_wet_prob", "fold", "teacher_version"])
         for c in rows:
-            w.writerow([c, 0.0, 0.5, 0, f"teacher_u{update_n}"])
+            w.writerow([c, 0.0, 0.5, 0, f"teacher_v{update_n + 1}"])
 
 
 code, out = run_update("--feedback", fb, "--current", first)
-check(code == 3 and "waiting for the teacher" in out, "update 1 ingested, then waits for the teacher (exit 3)")
+check(code == 3 and "waiting for the teacher" in out and "teacher_v2" in out,
+      "update 1 ingested, then waits for teacher_v2 (exit 3; teacher_v1 is the public-data teacher)")
 check(os.path.exists(os.path.join(rpool.root, "updates", "update_1.json")), "update_1 is in the pool")
 write_soft(1, skip=2)
 code, out = run_update()

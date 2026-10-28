@@ -60,14 +60,14 @@ python update/run_update.py --pool pool                          # carry on afte
 | Step | What happens |
 |---|---|
 | 1. ingest | `ingest.py --commit`, only when the last update has finished. Trigger says wait → exit 2 |
-| 2. teacher | Waits (exit 3) for `runs/teacher_uN/soft_labels.csv` (run on Colab), then checks it: a row for every `train` `crop_id`, none for val/test, probabilities in [0, 1] |
+| 2. teacher | Waits (exit 3) for `runs/teacher_v(N+1)/soft_labels.csv` (run on Colab; `teacher_v1` is the public-data teacher), then checks it: a row for every `train` `crop_id`, none for val/test, probabilities in [0, 1] |
 | 3. student | `update_student.py --current … --version student_uN --pool … --soft_labels … --out runs/student_uN` |
 | 4. gate | `promote.py --pool`: ≤ 2 more errors than the current **and** the best shipped version on `test_fixed`, and on `test_audit` from 30 images; `test_hard` reported only |
 | 5. deploy | accepted → `deploy/current/{weights.pt, info.json}` (version, threshold, temperature); the old one → `deploy/previous` |
 | 6. record | a row in `models.csv`, deployed **or** rejected, with test errors, accuracies, the paired margin and the reasons |
 
 Run it again at any point: it carries on from the stage stored in `pool/updates/update_N.json`
-(`"run"`). Update N's names are `teacher_uN` and `student_uN`; a rejected name is never reused.
+(`"run"`). Update N's names are `teacher_v(N+1)` and `student_uN`; a rejected name is never reused.
 Threshold for the bin: the student's `update.json` `"threshold"` (picked on val); 0.6 until
 the student writes one (`models.csv` says which).
 

@@ -18,8 +18,9 @@ stopped (the state is kept in pool/updates/update_N.json under "run").
 Exit codes: 0 finished (deployed or rejected), 2 waiting for more feedback, 3 waiting for the
 teacher's soft labels, 1 error.
 
-Names: update N trains student_uN with teacher_uN's soft labels, expected at
-<runs>/teacher_uN/soft_labels.csv (columns crop_id, teacher_logit, teacher_wet_prob, fold,
+Names: update N trains student_uN with teacher_v(N+1)'s soft labels (teacher_v1 is the public-data
+teacher), expected at
+<runs>/teacher_v(N+1)/soft_labels.csv (columns crop_id, teacher_logit, teacher_wet_prob, fold,
 teacher_version). Rejected candidates keep their name, so a name is never reused.
 
 The threshold the bin uses comes from the student's update.json ("threshold", picked on val);
@@ -43,6 +44,7 @@ from ledger import Ledger  # noqa: E402
 from pool import Pool  # noqa: E402
 
 THRESHOLD_FALLBACK = 0.6
+TEACHER_OFFSET = 1          # teacher_v1 is the public-data teacher, so update N uses teacher_v(N+1)
 WAIT_FEEDBACK, WAIT_TEACHER = 2, 3
 STAGES = ("ingested", "teacher_ready", "student_trained", "gated", "finished")
 MODELS_COLUMNS = ["update", "date", "version", "status", "replaces", "teacher_version", "pool_train_images",
@@ -192,7 +194,7 @@ def run(a):
         print(f"carrying on with {u.name} (stage: {u.run['stage']})")
     pool = Pool(pool_dir)
     runs = os.path.abspath(a.runs)
-    teacher_version, version = f"teacher_u{u.number}", f"student_u{u.number}"
+    teacher_version, version = f"teacher_v{u.number + TEACHER_OFFSET}", f"student_u{u.number}"
     out = os.path.join(runs, version)
     os.makedirs(out, exist_ok=True)
     log = os.path.join(out, "run_update.log")
@@ -262,8 +264,8 @@ if __name__ == "__main__":
     ap.add_argument("--feedback", nargs="*", default=[], help="hitl.py feedback folder(s)")
     ap.add_argument("--current", help="the student on the bin now (default: <deploy>/current/weights.pt)")
     ap.add_argument("--force", action="store_true", help="ingest even if the trigger says wait")
-    ap.add_argument("--soft_labels", help="the teacher's soft labels (default: <runs>/teacher_uN/soft_labels.csv)")
-    ap.add_argument("--runs", default="runs", help="where teacher_uN/ and student_uN/ live")
+    ap.add_argument("--soft_labels", help="the teacher's soft labels (default: <runs>/teacher_v(N+1)/soft_labels.csv)")
+    ap.add_argument("--runs", default="runs", help="where teacher_vN/ and student_uN/ live")
     ap.add_argument("--releases", default=os.path.join(REPO, "student", "releases"))
     ap.add_argument("--deploy", default="deploy")
     ap.add_argument("--models_csv", default="models.csv")
