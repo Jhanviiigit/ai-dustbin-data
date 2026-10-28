@@ -59,6 +59,7 @@ if not 0.0 <= args.distill_alpha <= 1.0:
     raise SystemExit("--distill_alpha must be between 0 and 1")
 
 random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 data_dir = Path(args.data_dir or Path(args.data_root) / VARIANTS[args.variant])
 out_dir = Path(args.out or Path(__file__).parent / "runs" / args.variant)
 out_dir.mkdir(parents=True, exist_ok=True)
@@ -80,7 +81,7 @@ print(f"{args.variant} ({version}): {data_dir}  train={len(train_ds)} (feedback 
 
 # Class weights from the train counts, so the rarer class is not ignored.
 counts = np.bincount([y for _, y in train_ds.items], minlength=len(CLASSES))
-weights = torch.tensor(counts.sum() / (len(CLASSES) * counts), dtype=torch.float32)
+weights = torch.tensor(counts.sum() / (len(CLASSES) * counts), dtype=torch.float32).to(device)
 print("train counts", dict(zip(CLASSES, counts.tolist())), "class weights", weights.tolist())
 
 # Teacher probability of "wet" for every train image (nan = none).
@@ -134,7 +135,9 @@ if args.init_weights:
     print(f"starting from {args.init_weights} ({init_ckpt.get('version')})")
 else:
     model = build_model(pretrained=True)               # ImageNet
-loss_fn = nn.CrossEntropyLoss(weight=weights)          # validation loss, and training loss without distillation
+model = model.to(device)
+print("device:", device)
+loss_fn = nn.CrossEntropyLoss(weight=weights)          # training loss without distillation
 opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
 sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=args.epochs)
 loader = torch.utils.data.DataLoader(train_ds if soft is None else WithSoft(train_ds, soft),
@@ -147,10 +150,10 @@ for epoch in range(1, args.epochs + 1):
     for batch in loader:
         opt.zero_grad()
         if soft is None:
-            x, y = batch
+            x, y = (t.to(device) for t in batch)
             loss = loss_fn(model(x), y)
         else:
-            x, y, q = batch
+            x, y, q = (t.to(device) for t in batch)
             loss = distill_loss(model(x), y, q, args.distill_alpha)
         loss.backward()
         opt.step()
@@ -159,14 +162,14 @@ for epoch in range(1, args.epochs + 1):
 
     logits, labels = collect_logits(model, val_ds)
     val_acc = (logits.argmax(1) == labels).float().mean().item()
-    val_loss = loss_fn(logits, labels).item()
+    val_loss = F.cross_entropy(logits, labels, weight=weights.cpu()).item()
     print(f"epoch {epoch:2d}  train loss {total / (len(loader) * args.batch_size):.4f}  "
           f"val loss {val_loss:.4f}  val acc {val_acc:.4f}")
 
     if (val_acc, -val_loss) > (best[0], -best[1]):
         best = (val_acc, val_loss)
         torch.save({
-            "state_dict": model.state_dict(),
+            "state_dict": {k: v.cpu() for k, v in model.state_dict().items()},
             "temperature": 1.0,             # set by calibrate.py
             "calibrated": False,            # calibrate.py sets True; promote.py refuses uncalibrated weights
             "version": version,

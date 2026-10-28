@@ -276,10 +276,11 @@ def load_feedback(root, exclude_hashes=frozenset()):
 def collect_logits(model, dataset, batch_size=64):
     """Returns (logits [N,2], labels [N]) in dataset order."""
     model.eval()
+    device = next(model.parameters()).device
     loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=0)
     logits, labels = [], []
     for x, y in loader:
-        logits.append(model(x))
+        logits.append(model(x.to(device)).cpu())
         labels.append(y)
     return torch.cat(logits), torch.cat(labels)
 
