@@ -13,8 +13,8 @@ Hand-off formats (team doc):
   4  feedback    : hitl.py FeedbackStore folder: feedback.csv (crop_file relative to the folder,
                    e.g. crops/<crop_id>.jpg; load_id, box, human_label, ...). Read through
                    student/common.py load_feedback(), so teacher and student use the same rows.
-  5  soft labels : split, class_folder, filename, teacher_wet_prob, teacher_logit, teacher_version
-                   teacher_logit = raw log-odds of "wet" (uncalibrated); teacher_wet_prob = sigmoid(logit / T)
+  5  soft labels : crop_id, teacher_logit, teacher_wet_prob, fold, teacher_version (runs/teacher_vN/soft_labels.csv)
+                   teacher_logit = raw wet log-odds; teacher_wet_prob = sigmoid(teacher_logit)
   6  teacher     : teacher_vN.joblib = classifier, temperature, backbone, crop settings, ...
 
 Torch is imported lazily, so indexing / fitting / soft-label code also runs without a GPU.
@@ -69,7 +69,7 @@ BACKBONE = "dinov2_vitb14"
 CROP_SETTINGS = {"eval_pad": list(EVAL_PAD), "train_pad": list(TRAIN_PAD), "img_size": IMG_SIZE,
                  "gray": GRAY, "masks": "dataset_D_v2_balanced/masks/{split}/{class}/{stem}.png",
                  "resize": "squash to img_size x img_size", "normalise": "ImageNet"}
-SOFT_LABEL_COLS = ["split", "class_folder", "filename", "teacher_wet_prob", "teacher_logit", "teacher_version"]
+SOFT_LABEL_COLS = ["crop_id", "teacher_logit", "teacher_wet_prob", "fold", "teacher_version"]
 
 
 def sigmoid(z):
@@ -188,7 +188,12 @@ def index_feedback(feedback_dir, exclude_hashes=frozenset()) -> pd.DataFrame:
     by_path = {str((feedback_dir / r["crop_file"]).resolve()): r for r in fb.to_dict("records")}
     rows = []
     for path, y in used:
-        r = by_path.get(str(Path(path).resolve()), {})
+        resolved_path = str(Path(path).resolve())
+        r = by_path.get(resolved_path)
+        if not r:
+            raise ValueError(f"no matching row in feedback.csv for crop: {path}")
+        if str(r.get("trigger", "")).strip().lower() == "audit":
+            continue
         rows.append(dict(dataset="feedback", split="feedback", class_folder=CLASSES[y], filename=Path(path).name,
                          path=str(path), y=y, mask_path=None, crop=False, source="feedback",
                          group=f"feedback/load/{r.get('load_id') or Path(path).stem}",
@@ -434,7 +439,7 @@ class Teacher:
 # ===========================================================================
 # 4. Soft labels (format 5)
 # ===========================================================================
-def out_of_fold_logits(X, y, groups, views, C, n_folds=5, seed=0):
+def out_of_fold_logits(X, y, groups, views, C, n_folds=5, seed=0, return_folds=False):
     """Logit for every view-0 row from a model that never saw that row's group.
 
     X/y/groups/views come from build_training_views (all views stacked). Folds are by group,
@@ -443,30 +448,64 @@ def out_of_fold_logits(X, y, groups, views, C, n_folds=5, seed=0):
     from sklearn.model_selection import GroupKFold
     clean = np.where(views == 0)[0]
     z = np.full(len(clean), np.nan)
+    folds = np.full(len(clean), -1, dtype=int)
     n_groups = len(np.unique(groups))
     k = min(n_folds, n_groups)
     gkf = GroupKFold(n_splits=k)
-    for tr, _ in gkf.split(X, y, groups):
+    for fold_idx, (tr, _) in enumerate(gkf.split(X, y, groups)):
         held_groups = np.setdiff1d(np.unique(groups), np.unique(groups[tr]))
         held = np.isin(groups[clean], held_groups)
+        folds[held] = fold_idx
         z[held] = _make_clf(C).fit(X[tr], y[tr]).decision_function(X[clean[held]])
     assert not np.isnan(z).any(), "some rows got no out-of-fold prediction"
+    if return_folds:
+        return z, folds
     return z
 
 
-def soft_label_table(df, logits, temperature, version):
-    """Format 5 rows for df (any split), given raw logits in df order."""
-    out = df[["split", "class_folder", "filename"]].copy()
-    out["teacher_wet_prob"] = sigmoid(np.asarray(logits) / temperature)
-    out["teacher_logit"] = np.asarray(logits, dtype=float)
-    out["teacher_version"] = version
+def interim_crop_id(df) -> list:
+    """crop_id per row until the pool reader lands.
+
+    TODO(pool): replace with the pool manifest's crop_id once update/pool.py is on main.
+    A bare file stem is NOT unique here: dataset C and D hold the same photos, and file names
+    repeat across class folders, so the id is dataset/split/class_folder/stem (the same key the
+    feature cache uses). A real crop_id column, when present, wins.
+    """
+    if "crop_id" in df.columns and df["crop_id"].notna().all():
+        return [str(c) for c in df["crop_id"]]
+    return [f"{d}/{s}/{c}/{os.path.splitext(str(f))[0]}"
+            for d, s, c, f in zip(df["dataset"], df["split"], df["class_folder"], df["filename"])]
+
+
+def soft_label_table(df, logits, version, folds):
+    """Format 5 rows for df (train rows only), given raw logits and folds in df order.
+
+    Columns exactly, in order: crop_id, teacher_logit, teacher_wet_prob, fold, teacher_version.
+    teacher_logit = raw wet log-odds (2-output head: wet minus dry); teacher_wet_prob = sigmoid of it.
+    folds = the folds returned by out_of_fold_logits(); required, never defaulted.
+    """
+    if not str(version).startswith("teacher_v"):
+        raise ValueError(f"version must look like teacher_vN, got {version!r}")
+    raw = np.asarray(logits, dtype=float)
+    logit = raw[:, 1] - raw[:, 0] if raw.ndim == 2 and raw.shape[1] == 2 else raw.ravel()
+    folds = np.asarray(folds, dtype=int).ravel()
+    if not (len(logit) == len(folds) == len(df)):
+        raise ValueError(f"lengths differ: {len(df)} rows, {len(logit)} logits, {len(folds)} folds")
+    if (folds < 0).any():
+        raise ValueError("some rows have no fold (fold < 0)")
+    out = pd.DataFrame({
+        "crop_id": interim_crop_id(df),
+        "teacher_logit": logit,
+        "teacher_wet_prob": sigmoid(logit),
+        "fold": folds,
+        "teacher_version": str(version),
+    })
     return out[SOFT_LABEL_COLS]
 
 
 def write_soft_labels(table, path):
-    key = table.split + "|" + table.class_folder + "|" + table.filename
-    if key.duplicated().any():
-        raise ValueError(f"{key.duplicated().sum()} duplicate split/class/filename keys in soft labels")
+    if table["crop_id"].duplicated().any():
+        raise ValueError(f"{table['crop_id'].duplicated().sum()} duplicate crop_id in soft labels")
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     table.to_csv(path, index=False)
@@ -519,9 +558,9 @@ def evaluate(name, p_wet, df):
 # ===========================================================================
 def run_update(datasets, out_dir, version, feedback_dir=None, n_aug=2, cache_dir=None, extractor=None):
     """datasets: {name: (root, masks_dir or None, crop: bool)}. Train = all train splits +
-    feedback; val = all val splits (C and the temperature are chosen there). Writes
-    soft_labels_<dataset>_<version>.csv per dataset (+ feedback), one combined
-    soft_labels_<version>.csv for the student, and <version>.joblib."""
+    non-audit feedback; val = all val splits (C and the temperature are chosen there).
+    Writes <out_dir>/<version>/: soft_labels.csv (format 5, one row per train image,
+    out-of-fold), results_<version>.csv and <version>.joblib."""
     out_dir = Path(out_dir)
     ext = extractor or FeatureExtractor(cache_dir=cache_dir or out_dir / "cache")
     frames = [index_split_dataset(root, name, masks, crop) if name != "bin" else index_bin_dataset(root)
@@ -532,6 +571,8 @@ def run_update(datasets, out_dir, version, feedback_dir=None, n_aug=2, cache_dir
             frames.append(fb)
     all_df = pd.concat(frames, ignore_index=True)
     train = all_df[all_df.split.isin(["train", "feedback"])].reset_index(drop=True)
+    if "trigger" in train.columns:
+        train = train[train["trigger"].astype(str).str.strip().str.lower() != "audit"].reset_index(drop=True)
     val = all_df[all_df.split == "val"].reset_index(drop=True)
     test = all_df[all_df.split == "test"].reset_index(drop=True)
 
@@ -543,27 +584,19 @@ def run_update(datasets, out_dir, version, feedback_dir=None, n_aug=2, cache_dir
         "n_train": len(train), "n_val": len(val)})
     print(f"{version}: C={t.C}, T={t.temperature:.3f}")
 
-    z_oof = out_of_fold_logits(X, y, g, v, t.C)
-    tables = pd.concat([train.assign(_z=z_oof), val.assign(_z=t.logit(Xv)), test.assign(_z=t.logit(Xt))])
-    per_dataset = []
-    for name, part in tables.groupby("dataset"):
-        tab = soft_label_table(part, part._z.values, t.temperature, version)
-        write_soft_labels(tab, out_dir / f"soft_labels_{name}_{version}.csv")
-        per_dataset.append(tab)
-    # one combined file for the student (update_student.py --soft_labels takes one file)
-    combined = pd.concat(per_dataset, ignore_index=True)
-    key = combined.split + "|" + combined.class_folder + "|" + combined.filename.map(lambda f: os.path.splitext(f)[0])
-    if key.duplicated().any():
-        print(f"warning: not writing soft_labels_{version}.csv: {key.duplicated().sum()} file names repeat across "
-              f"datasets (e.g. C and D together); use the per-dataset files")
-    else:
-        write_soft_labels(combined, out_dir / f"soft_labels_{version}.csv")
-        print(f"soft_labels_{version}.csv: {len(combined)} rows ({', '.join(f'{n}: {len(x)}' for n, x in tables.groupby('dataset'))})")
+    z_oof, folds = out_of_fold_logits(X, y, g, v, t.C, return_folds=True)
+    soft_tab = soft_label_table(train, z_oof, version, folds=folds)
+
+    runs_dir = Path(out_dir) if out_dir else Path("runs")
+    save_dir = runs_dir if runs_dir.name == version else (runs_dir / version)
+    write_soft_labels(soft_tab, save_dir / "soft_labels.csv")
+    print(f"soft_labels.csv: {len(soft_tab)} rows written to {save_dir / 'soft_labels.csv'}")
+
     results = [dict(dataset=name, **evaluate(version, t.wet_prob(Xt[(test.dataset == name).values]),
                                              test[test.dataset == name]))
                for name in test.dataset.unique()]
-    pd.DataFrame(results).to_csv(out_dir / f"results_{version}.csv", index=False)
-    t.save(out_dir / f"{version}.joblib")
+    pd.DataFrame(results).to_csv(save_dir / f"results_{version}.csv", index=False)
+    t.save(save_dir / f"{version}.joblib")
     return t, pd.DataFrame(results)
 
 
@@ -571,7 +604,7 @@ def _main(argv=None):
     import argparse
     ap = argparse.ArgumentParser(description="Teacher update cycle: fit, export soft labels, save.")
     ap.add_argument("--version", required=True, help="e.g. teacher_v2")
-    ap.add_argument("--out", default="teacher_out")
+    ap.add_argument("--out", default="runs", help="runs output folder (default: runs)")
     ap.add_argument("--plate", help="dataset_C_v2 folder (cropped with the D masks)")
     ap.add_argument("--gray", help="dataset_D_v2_balanced folder")
     ap.add_argument("--bin", help="dataset_bin folder (format 2, already cropped)")
