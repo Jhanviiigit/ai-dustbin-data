@@ -7,9 +7,11 @@ its training, calibration, evaluation, inference and update code. It is built on
 **Status: the code is complete for the base model, distillation from the teacher, feedback
 crops and the update step. The base model is trained on the Organik gray crops only (see
 "Current training" below), with cross-validated results. The update step (`update_student.py
---pool`, with the real teacher's soft labels, the real gate and the deploy) has run end to end on
-real data (`update/README.md`, "Tested end to end"). Nothing has run on real bin photos yet: the
-bin feedback in that run is real Organik photos that were held back.**
+--pool`, with the teacher's soft labels, the real gate and the deploy) has run end to end on
+real data (`update/README.md`, "Tested end to end"), with the teacher as it was before PR #19. Since
+#19 the teacher is fitted on the public datasets and human-checked feedback crops, never on Organik, so
+that run has to be repeated. Nothing has run on real bin photos yet: the bin feedback in that run is
+real Organik photos that were held back.**
 
 ## Which data to use for what
 
@@ -480,8 +482,9 @@ Done
 - Training, calibration, evaluation and inference code. The detector's own `load_student()`
   loads the real `organik_gray_v2` weights and classifies a real test crop; `item_crop()` and
   `make_classify()` were checked earlier, with an untrained checkpoint.
-- **On real data:** `update_student.py --pool` with distillation from the real teacher's soft
-  labels (544 matched by `crop_id`), `promote.py` and the deploy (`update/README.md`, "Tested end
+- **On real data:** `update_student.py --pool` with distillation from the teacher's soft
+  labels (544 matched by `crop_id`; those came from the teacher before #19, which had been fitted on
+  Organik, so the run has to be repeated with the current teacher), `promote.py` and the deploy (`update/README.md`, "Tested end
   to end"); the `--feedback_dir` path on a real feedback folder in the `hitl.py` format (33
   crops used); the calibration fallback on a val set the model gets 100% right; the old
   `train.py --variant bin` and non-pool `update_student.py`.
