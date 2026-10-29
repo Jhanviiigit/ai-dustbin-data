@@ -20,8 +20,8 @@ manifest.csv columns (agreed format):
   path            relative to pool/, forward slashes
   split           train | val | test_fixed | test_audit | test_hard
   label           dry | wet               (folders are "dry waste" / "wet waste")
-  group_id        capture: item_id; feedback: load_id; augmented: its original's group
-  origin          capture | feedback | augmented
+  group_id        capture: item_id; public: the dataset's group; feedback: load_id; augmented: its original's
+  origin          capture (bin camera) | public (a starting dataset, e.g. Organik) | feedback | augmented
   parent_crop_id  augmented copies: the original's crop_id; otherwise empty
   trigger         feedback: low_confidence | audit; otherwise empty
   from_drop       feedback: 1 | 0 (hitl.py); otherwise empty
@@ -36,7 +36,8 @@ Rules enforced here:
   - an augmented copy points to an existing original in train, in the same group
 
 Command line:
-  python update/pool.py seed  --pool pool --dataset_bin dataset_bin
+  python update/pool.py seed  --pool pool --organik dataset_organik_v2     # the starting data
+  python update/pool.py seed  --pool pool --dataset_bin dataset_bin       # bin-camera captures
   python update/pool.py check --pool pool
 """
 
@@ -53,11 +54,12 @@ SPLITS = ("train", "val", "test_fixed", "test_audit", "test_hard")
 TEST_SPLITS = ("test_fixed", "test_audit", "test_hard")
 LABELS = ("dry", "wet")
 CLASS_FOLDERS = {"dry": "dry waste", "wet": "wet waste"}
-ORIGINS = ("capture", "feedback", "augmented")
+ORIGINS = ("capture", "public", "feedback", "augmented")
 TRIGGERS = ("low_confidence", "audit", "")
 COLUMNS = ["crop_id", "path", "split", "label", "group_id", "origin", "parent_crop_id", "trigger",
            "from_drop", "phash", "added_in", "student_conf"]
 DATASET_BIN_SPLITS = {"train": "train", "val": "val", "test": "test_fixed"}
+FOLDER_LABELS = {"dry waste": "dry", "wet waste": "wet"}
 
 
 # ─── Perceptual hash (same algorithm as data_prep/clean_dataset.py) ───────────
@@ -233,19 +235,42 @@ def seed_from_dataset_bin(pool, dataset_bin, added_in="seed"):
     return added
 
 
+def seed_from_organik(pool, dataset_dir, added_in="seed"):
+    """Copy dataset_organik_v2 (release data-organik-v2, Sian's similarity-grouped split) into the pool:
+    train -> train, val -> val, test -> test_fixed; origin public; group_id = organik_g<group>, so a
+    group that spans two splits is refused (pool.add). crop_id = organik_<file stem>."""
+    with open(os.path.join(dataset_dir, "manifest.csv"), newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    ids = [f"organik_{os.path.splitext(r['filename'])[0]}" for r in rows]
+    dupes = [c for c, n in Counter(ids).items() if n > 1]
+    if dupes:
+        raise PoolError(f"{len(dupes)} file names repeat in {dataset_dir}, e.g. {dupes[:3]}")
+    added = Counter()
+    for r, crop_id in zip(rows, ids):
+        if crop_id in pool.by_id:
+            continue                                     # seeding again is harmless
+        split = DATASET_BIN_SPLITS[r["split"]]
+        pool.add(os.path.join(dataset_dir, *r["new_path"].replace("\\", "/").split("/")), crop_id, split,
+                 FOLDER_LABELS[r["class_folder"]], f"organik_g{r['group']}", "public", added_in=added_in)
+        added[split] += 1
+    return added
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Create, seed and check the shared pool")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    s = sub.add_parser("seed", help="copy dataset_bin into the pool (train, val, test_fixed)")
+    s = sub.add_parser("seed", help="copy a split dataset into the pool (train, val, test_fixed)")
     s.add_argument("--pool", required=True)
-    s.add_argument("--dataset_bin", required=True)
+    src = s.add_mutually_exclusive_group(required=True)
+    src.add_argument("--dataset_bin", help="split_bin_dataset.py output (bin-camera captures)")
+    src.add_argument("--organik", help="dataset_organik_v2 (release data-organik-v2)")
     c = sub.add_parser("check", help="list rule violations and counts")
     c.add_argument("--pool", required=True)
     a = ap.parse_args()
 
     pool = Pool(a.pool)
     if a.cmd == "seed":
-        added = seed_from_dataset_bin(pool, a.dataset_bin)
+        added = seed_from_organik(pool, a.organik) if a.organik else seed_from_dataset_bin(pool, a.dataset_bin)
         pool.save()
         print(f"seeded {sum(added.values())} images: {dict(added)}")
     problems = pool.check()

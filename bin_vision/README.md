@@ -100,7 +100,7 @@ python hitl_demo.py --student_dir ../student --model_path ../student/runs/bin/we
 **Which student, which threshold.** With `--deploy`, the bin uses what the update pipeline
 deployed: `deploy/current/weights.pt`, and from `deploy/current/info.json` (written by
 `update/run_update.py`) its `version` (logged as `student_version`) and its `threshold`
-(picked on val by the student update; 0.6 until one is deployed). When a new student is
+(picked on val by the student update; 0.8 until one is deployed: with 36 val images per class the agreed rule, Wilson lower bound of precision >= 95% per class, cannot be met yet, and on the Organik test set 0.8 caught all 7 errors for 15% of items asked, 0.6 only 2). When a new student is
 deployed, the bin switches to it between loads (when the plate is cleared), so a load is never
 judged half by one student and half by another. `--threshold` overrides the deployed one;
 `load_deployed(deploy_dir)` gives the same in code.

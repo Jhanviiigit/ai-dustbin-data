@@ -24,7 +24,7 @@ teacher), expected at
 teacher_version). Rejected candidates keep their name, so a name is never reused.
 
 The threshold the bin uses comes from the student's update.json ("threshold", picked on val);
-until the student writes one, THRESHOLD_FALLBACK (0.6) is used and models.csv says so.
+until the student writes one, THRESHOLD_FALLBACK (0.8) is used and models.csv says so.
 """
 
 import argparse
@@ -43,7 +43,7 @@ from ingest import ingest  # noqa: E402
 from ledger import Ledger  # noqa: E402
 from pool import Pool  # noqa: E402
 
-THRESHOLD_FALLBACK = 0.6
+THRESHOLD_FALLBACK = 0.8     # same as bin_vision/hitl.py
 TEACHER_OFFSET = 1          # teacher_v1 is the public-data teacher, so update N uses teacher_v(N+1)
 WAIT_FEEDBACK, WAIT_TEACHER = 2, 3
 STAGES = ("ingested", "teacher_ready", "student_trained", "gated", "finished")
@@ -113,7 +113,7 @@ def latest(pool_dir):
     return Update(pool_dir, n) if n and os.path.exists(os.path.join(pool_dir, "updates", f"update_{n}.json")) else None
 
 
-def models_row(u, gate, status, threshold, source, pool):
+def models_row(update, teacher_version, new_rows, gate, status, threshold, source, pool):
     sets = gate.get("sets", {})
 
     def get(name, *keys):
@@ -127,10 +127,10 @@ def models_row(u, gate, status, threshold, source, pool):
         return f"{v:.4f}" if isinstance(v, float) else ""
 
     train = pool.rows_in("train")
-    return {"update": u.name, "date": datetime.now().isoformat(timespec="seconds"), "version": gate.get("version", ""),
-            "status": status, "replaces": gate.get("current") or "", "teacher_version": u.run.get("teacher_version", ""),
+    return {"update": update, "date": datetime.now().isoformat(timespec="seconds"), "version": gate.get("version", ""),
+            "status": status, "replaces": gate.get("current") or "", "teacher_version": teacher_version or "",
             "pool_train_images": len(train), "pool_train_groups": len({r["group_id"] for r in train}),
-            "new_rows": u.data.get("new_rows", ""), "test_fixed_n": get("test_fixed", "n"),
+            "new_rows": new_rows, "test_fixed_n": get("test_fixed", "n"),
             "test_fixed_errors": get("test_fixed", "candidate", "errors"), "test_fixed_acc": acc("test_fixed"),
             "test_fixed_balanced_acc": acc("test_fixed", "balanced_accuracy"), "best_shipped": get("test_fixed", "best"),
             "extra_errors_vs_best": get("test_fixed", "vs_best", "extra_errors"), "test_audit_n": get("test_audit", "n"),
@@ -234,7 +234,7 @@ def run(a):
     # 5-6. deploy and record
     with open(gate_json, encoding="utf-8") as f:
         gate = json.load(f)
-    threshold, source = THRESHOLD_FALLBACK, "fallback 0.6"
+    threshold, source = THRESHOLD_FALLBACK, f"fallback {THRESHOLD_FALLBACK}"
     upd_json = os.path.join(out, "update.json")
     if os.path.exists(upd_json):
         with open(upd_json, encoding="utf-8") as f:
@@ -252,7 +252,8 @@ def run(a):
         print(f"\nDEPLOYED {version} -> {path} (threshold {threshold}, {source})")
     else:
         print(f"\nREJECTED {version}: " + "; ".join(gate["reasons"]) + "\nthe bin keeps its current student")
-    append_models_csv(a.models_csv, models_row(u, gate, status, threshold, source, pool))
+    append_models_csv(a.models_csv, models_row(u.name, u.run.get("teacher_version"), u.data.get("new_rows", ""), gate,
+                                               status, threshold, source, pool))
     u.done("finished", status=status, finished=datetime.now().isoformat(timespec="seconds"))
     print(f"recorded in {a.models_csv}")
     return 0

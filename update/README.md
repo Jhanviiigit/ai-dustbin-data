@@ -7,7 +7,8 @@ teacher, student, gate, deploy, `models.csv`)** are done. Phase 3 calls
 
 | File | What it does |
 |---|---|
-| `pool.py` | The pool: read, add (with the agreed rules enforced), save, check; seed from `dataset_bin` |
+| `pool.py` | The pool: read, add (with the agreed rules enforced), save, check; seed from `dataset_organik_v2` or `dataset_bin` |
+| `baseline.py` | Ship the first student once (gate as a first release, deploy, first `models.csv` row) |
 | `ledger.py` | Which feedback rows are in the pool, when the last update was, how many updates (`pool/ledger.json`) |
 | `collect.py` | New feedback rows, filtered by the student's `load_feedback()` rules |
 | `split.py` | Where each new group goes: by group and hash, with near-copy (leak) checks |
@@ -22,7 +23,7 @@ teacher, student, gate, deploy, `models.csv`)** are done. Phase 3 calls
 ## Feedback → pool (`ingest.py`)
 
 ```bash
-python update/pool.py seed --pool pool --dataset_bin dataset_bin        # once
+python update/pool.py seed --pool pool --organik dataset_organik_v2     # once
 python update/ingest.py --pool pool --feedback feedback                  # dry run: plan + trigger, writes nothing
 python update/ingest.py --pool pool --feedback feedback --commit         # commit if the trigger says go
 python update/ingest.py --pool pool --public_index public_phash.csv      # public images near-copying a test image
@@ -68,7 +69,7 @@ python update/run_update.py --pool pool                          # carry on afte
 
 Run it again at any point: it carries on from the stage stored in `pool/updates/update_N.json`
 (`"run"`). Update N's names are `teacher_v(N+1)` and `student_uN`; a rejected name is never reused.
-Threshold for the bin: the student's `update.json` `"threshold"` (picked on val); 0.6 until
+Threshold for the bin: the student's `update.json` `"threshold"` (picked on val); 0.8 until
 the student writes one (`models.csv` says which).
 
 ## The pool
@@ -77,7 +78,7 @@ Only the pipeline writes it (through `pool.py`); the teacher and student only re
 
 ```
 pool/
-  train/      {dry waste,wet waste}/<crop_id>.jpg   capture + feedback + augmented copies
+  train/      {dry waste,wet waste}/<crop_id>.jpg   public (Organik) + feedback + augmented copies
   val/        ...                                   picks tau, the threshold, calibration
   test_fixed/ ...                                   dataset_bin/test, never changes; the gate's score
   test_audit/ ...                                   audit labels: accuracy of automatic decisions
@@ -93,8 +94,8 @@ pool/
 | `path` | relative to `pool/`, forward slashes, e.g. `train/dry waste/abc.jpg` |
 | `split` | `train`, `val`, `test_fixed`, `test_audit`, `test_hard` |
 | `label` | `dry`, `wet` (folders are `dry waste` / `wet waste`) |
-| `group_id` | capture: `item_id`; feedback: `load_id`; augmented: same as its original |
-| `origin` | `capture`, `feedback`, `augmented` |
+| `group_id` | public: `organik_g<group>` (Sian's similarity groups); capture: `item_id`; feedback: `load_id`; augmented: same as its original |
+| `origin` | `public` (a starting dataset: Organik), `capture` (bin-camera captures), `feedback`, `augmented` |
 | `parent_crop_id` | augmented copies: the original's `crop_id`; otherwise empty |
 | `trigger` | feedback: `low_confidence` or `audit`; otherwise empty |
 | `from_drop` | feedback: `1` (crop saved when the item landed) or `0`; otherwise empty |
@@ -111,10 +112,45 @@ settings; score `test_fixed`, `test_audit` and `test_hard` separately; never tra
 `val` or any test split. Map `label` `dry` -> 0, `wet` -> 1. Use `group_id` for grouped folds.
 
 ```bash
-python update/pool.py seed  --pool pool --dataset_bin dataset_bin   # start a pool
+python update/pool.py seed  --pool pool --organik dataset_organik_v2   # start the real pool
+python update/pool.py seed  --pool pool --dataset_bin dataset_bin     # (bin-camera captures, if any)
 python update/pool.py check --pool pool                              # rule violations + counts
 python update/test_pool.py                                           # unit tests
 ```
+
+## The real pool and the baseline
+
+The starting data is Sian's Organik split (release `data-organik-v2`; use the released zip, the
+split cannot be rebuilt identically on another machine):
+
+| Organik split | Pool split | Images (dry / wet) |
+|---|---|---|
+| train | `train` | 502 (170 / 332) |
+| val | `val` | 72 (36 / 36) |
+| test | `test_fixed` | 72 (36 / 36): fixed from now on, the gate's score |
+
+82 groups (`organik_g<group>`), none in two splits; no val/test image is a pHash near-copy of a
+train image. Every row is `origin = public`, `added_in = seed`, so bin numbers and Organik
+numbers can always be told apart. At the first update, `train` is balanced with augmented dry
+copies (≤ 2 per original), as for any update.
+
+```bash
+python update/pool.py seed --pool pool --organik dataset_organik_v2
+python update/baseline.py --pool pool --weights student/runs/organik/weights.pt
+```
+
+`baseline.py` ships `organik_gray_v2` (release `student-organik_gray_v2`, trained on the Organik
+train split only) once: the gate as a first release (on `test_fixed`: 7 errors, 90.3%), then
+`student/releases/organik_gray_v2/`, `deploy/current/` with threshold 0.8, and the first
+`models.csv` row (`update = seed`). It refuses to run a second time.
+
+`test_fixed` is Organik phone photos, not the bin camera: it guards against a student getting
+worse. The accuracy on the bin is `test_audit` (the 1-in-10 audits), gated from 30 images.
+
+**Threshold:** 0.8 (`THRESHOLD_FALLBACK`, also in `bin_vision/hitl.py`) until the student's
+val rule can be met (Wilson lower bound of precision ≥ 95% per class needs ≥ 73 val images per
+class; there are 36). On the Organik test set 0.8 caught all 7 errors and asked a person about
+15% of items; 0.6 caught 2.
 
 ## Sample pool
 

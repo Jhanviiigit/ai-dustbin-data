@@ -272,9 +272,28 @@ with open(os.path.join(W, "models.csv"), newline="", encoding="utf-8") as f:
     rows = list(csv.DictReader(f))
 check([(r["version"], r["status"]) for r in rows] == [("student_u1", "deployed"), ("student_u2", "rejected")],
       "models.csv records the deployed and the rejected update")
-check(rows[0]["threshold"] == "0.83" and rows[1]["threshold_source"] == "fallback 0.6", "threshold and its source recorded")
+check(rows[0]["threshold"] == "0.83" and rows[1]["threshold_source"] == "fallback 0.8", "threshold and its source recorded")
 check(rows[1]["reasons"] != "" and rows[0]["test_fixed_errors"] == "2", "rejection reasons and test errors recorded")
 check(Pool(rpool.root).check() == [], "pool rules still hold")
+
+print("baseline.py:")
+BASE = os.path.join(HERE, "baseline.py")
+bpool = make_pool(os.path.join(TMP, "bpool"))
+bw = constant_model(os.path.join(TMP, "b", "first.pt"), "base_v1", "dry")
+bargs = [sys.executable, BASE, "--pool", bpool.root, "--weights", bw, "--releases", f"{TMP}/b/releases",
+         "--deploy", f"{TMP}/b/deploy", "--models_csv", f"{TMP}/b/models.csv"]
+p = subprocess.run(bargs, capture_output=True, text=True, encoding="utf-8")
+with open(f"{TMP}/b/deploy/current/info.json", encoding="utf-8") as f:
+    binfo = json.load(f)
+check(p.returncode == 0 and binfo["version"] == "base_v1" and binfo["threshold"] == 0.8,
+      "first student released and deployed with the 0.8 fallback threshold")
+check(os.path.exists(f"{TMP}/b/releases/base_v1/weights.pt"), "baseline is in releases/, so later gates compare with it")
+with open(f"{TMP}/b/models.csv", newline="", encoding="utf-8") as f:
+    brow = list(csv.DictReader(f))
+check([(r["update"], r["version"], r["status"], r["test_fixed_errors"]) for r in brow] == [("seed", "base_v1", "deployed", "2")],
+      "models.csv starts with the baseline row")
+p = subprocess.run(bargs, capture_output=True, text=True, encoding="utf-8")
+check(p.returncode != 0 and "set once" in p.stdout + p.stderr, "a second baseline is refused")
 
 shutil.rmtree(TMP, ignore_errors=True)
 print(f"\n{'ALL CHECKS PASSED' if not failures else f'{len(failures)} CHECK(S) FAILED'}")
