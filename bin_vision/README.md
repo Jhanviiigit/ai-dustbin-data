@@ -181,6 +181,11 @@ What this shows:
 - **Two touching items dropped together stay hard (33%).** Almost all of that
   comes from the size rule ("bigger than one item"), which depends on how big one
   item looks to the camera: re-tune `DEFAULT_RULE.max_area_frac` on real bin photos.
+  **Real camera frames (19, one session):** a single item took 3% to 23% of the frame, so the
+  synthetic value 0.09 flagged 6 of 14 single items as `SEPARATE`; it is now 0.25, a provisional
+  value that clears every single item seen. Area cannot separate touching items from one big item
+  (three touching wrappers were 8%, a single wrapper 8%), so such loads are not caught by size; the
+  tables below were measured with 0.09 on synthetic scenes and were not re-run.
   Notch depth adds a little; colour differences did not help at all (dropped).
   This case needs a learned detector (e.g. YOLO): future work.
 - **False alarms (2-4%)** are mostly one item broken into two blobs. Harmless
