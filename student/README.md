@@ -6,9 +6,10 @@ its training, calibration, evaluation, inference and update code. It is built on
 
 **Status: the code is complete for the base model, distillation from the teacher, feedback
 crops and the update step. The base model is trained on the Organik gray crops only (see
-"Current training" below), with cross-validated results. Distillation, feedback crops and the
-update step have been tested on fake data only (the real teacher soft-label files were
-checked against the real datasets). Nothing has run on real bin photos yet.**
+"Current training" below), with cross-validated results. The update step (`update_student.py
+--pool`, with the real teacher's soft labels, the real gate and the deploy) has run end to end on
+real data (`update/README.md`, "Tested end to end"). Nothing has run on real bin photos yet: the
+bin feedback in that run is real Organik photos that were held back.**
 
 ## Which data to use for what
 
@@ -362,13 +363,41 @@ accuracy will be too good.
 
 ## One update of the student
 
+**In the update pipeline** (`update/run_update.py` calls this; it is the path to use):
+
+```bash
+python student/update_student.py --current deploy/current/weights.pt --version student_u1 \
+    --pool pool --soft_labels runs/teacher_v2/soft_labels.csv --out runs/student_u1
+python student/promote.py --candidate runs/student_u1/weights.pt \
+    --current deploy/current/weights.pt --pool pool                  # the gate
+```
+
+`--pool` reads the shared pool (`update/pool.py`) and nothing else:
+- trains (`train.py --pool`) from the current student on the pool's **train** rows: the Organik
+  images, the feedback crops and the augmented copies. The pool holds the detector's crops
+  already, so nothing is cropped; the feedback is already in it (`--feedback_dir` is refused);
+- picks the epoch and calibrates on the pool's **val** rows. It never reads `val`/`test_*` for
+  training and never touches a test split;
+- soft labels are matched on `crop_id` (the image's file name without `.jpg`), the layout
+  `teacher/pool_soft_labels.py` writes: `crop_id, teacher_wet_prob [, teacher_logit, fold, teacher_version]`;
+- **temperature:** the fit on val, unless it lands on the edge of the search range (a val set
+  with no or few errors, where the fit runs to T = 0.05 and makes every prediction look certain):
+  then the current student's temperature is kept, and `update.json` / the weights say so
+  (`calibration_note`);
+- **review threshold** in `update.json` (`threshold`, `threshold_source`): the lowest confidence at
+  which, among val images decided on their own, the Wilson lower bound of precision is at least 95%
+  for both classes. With too few val images this cannot be met (even all-correct needs about 73
+  per class; there are 36), so `threshold` is `null` and the pipeline keeps its fallback of 0.8.
+
+**Outside the pipeline** (a `dataset_bin` folder, no pool):
+
 ```bash
 python student/update_student.py --current student/releases/student_v1/weights.pt \
     --version student_v2 --data_root . \
     --feedback_dir bin_feedback --soft_labels teacher/soft_labels_v2.csv
 
 python student/promote.py --candidate student/runs/student_v2/weights.pt \
-    --current student/releases/student_v1/weights.pt --pool pool     # the gate (or --data_dir dataset_bin)
+    --current student/releases/student_v1/weights.pt --data_dir dataset_bin     # the gate (or --pool pool)
 ```
 
 `update_student.py` runs `train.py --variant bin` from the current weights (on
@@ -419,8 +448,9 @@ python student/experiments.py --data_root . --public_variant gray --seeds 1 2 3
 
 Trains `public_only`, `bin_only` and `public_to_bin` (`--init_weights`, lr 3e-5) for each
 seed, calibrates each on `dataset_bin/val`, scores each on `dataset_bin/test`, and writes
-`student/runs/experiments/summary.md` (mean and std over seeds). It needs `dataset_bin`, so
-it has only been run on fake data. It is slow on a CPU: 3 trainings per seed.
+`student/runs/experiments/summary.md` (mean and std over seeds). It needs `dataset_bin`, which
+does not exist yet (no bin photos), so it has not been run on real data. It is slow on a CPU:
+3 trainings per seed.
 
 ## Speed on the Nano
 
@@ -432,11 +462,12 @@ repeat. The TensorRT FP16 build and `tegrastats` runs happen on the Nano:
 trtexec --onnx=student_224.onnx --fp16 --saveEngine=student_224.engine
 ```
 
-Tested (on a laptop CPU, with fake-data weights): the exported files pass the ONNX checker;
-ONNX Runtime matches PyTorch to about 1e-6 at 160 and 224 px; and the preprocessing recipe
-in the `.json` (RGB, bilinear resize, ImageNet mean/std) reproduces `classify_image()` (same
-label on 15/15 random crops, probabilities within 1e-6). For a feel only: 160 px took 1.6 ms
-and 224 px 2.9 ms per image in ONNX Runtime on this CPU. That is not a Nano number.
+Tested on a laptop CPU: the export of the real `organik_gray_v2` weights (224 px) passes the
+ONNX checker, and on 20 real test crops ONNX Runtime gives the same label as `classify_image()`
+(20/20) with probabilities within 3.5e-6, using the preprocessing recipe in the `.json` (RGB,
+bilinear resize, ImageNet mean/std). The 160 px export was checked earlier, with an untrained
+checkpoint. For a feel only: 160 px took 1.6 ms and 224 px 2.9 ms per image in ONNX Runtime on
+this CPU. That is not a Nano number.
 
 **Not tested:** TensorRT, FP16 and `tegrastats` (they need the Nano), and whether a model
 trained at 160 px is accurate enough (it needs real training). `export_onnx.py` uses the
@@ -446,14 +477,17 @@ Needs `pip install onnx` (and `onnxruntime` only if you want to repeat the check
 ## Done and not done
 
 Done
-- Training, calibration, evaluation and inference code; the interface checked against the
-  detector's own `load_student()`, `item_crop()` and `make_classify()` with a dummy
-  (untrained) checkpoint.
-- Distillation, feedback crops, versions, `promote.py`, `experiments.py`, `--img_size`,
-  `update_student.py`: all run end to end on fake data in the formats the capture-tool and
-  human-in-the-loop branches write. `update_student.py` was also run with
-  `dataset_bin/test` hidden and with a planted duplicate of a val image. The soft-label join
-  was checked on the real teacher files and datasets (100% matched).
+- Training, calibration, evaluation and inference code. The detector's own `load_student()`
+  loads the real `organik_gray_v2` weights and classifies a real test crop; `item_crop()` and
+  `make_classify()` were checked earlier, with an untrained checkpoint.
+- **On real data:** `update_student.py --pool` with distillation from the real teacher's soft
+  labels (544 matched by `crop_id`), `promote.py` and the deploy (`update/README.md`, "Tested end
+  to end"); the `--feedback_dir` path on a real feedback folder in the `hitl.py` format (33
+  crops used); the calibration fallback on a val set the model gets 100% right; the old
+  `train.py --variant bin` and non-pool `update_student.py`.
+- **Earlier, on fake data only:** `update_student.py` with `dataset_bin/test` hidden and with a
+  planted duplicate of a val image; `experiments.py`, versions and `--img_size`. The soft-label
+  join was checked on the real teacher files and datasets (100% matched).
 - A bug fixed in the temperature fit: the optimiser diverged on small or separable val sets
   (T = NaN, or 1e-5). It is now a bounded search; a warning is printed if T lands on the
   limit.
@@ -461,13 +495,12 @@ Done
 
 Not done
 - Training on C v2 and D v2 balanced (not planned: the student uses Organik only). The
-  hand-off with the detector needs a re-check with the real `organik_gray_v2` weights.
+  detector's `item_crop()` and `make_classify()` need a re-check with the real
+  `organik_gray_v2` weights (`load_student()` was checked).
 - Anything on real bin photos: `dataset_bin` does not exist yet, so `experiments.py` and
   the bin fine-tune have not run on real data.
 - The gray vs plate decision (and whether the detector will ever send plate crops).
 - TensorRT, FP16 and power measurements on the Nano.
-- `update_student.py --pool` (train on Organik + `pool/train`, soft labels by `crop_id`):
-  `update/run_update.py` already calls it with these arguments.
 - Handing over the `.pt` files (`*.pt` is gitignored; they will go in a release).
 
 ## Notes

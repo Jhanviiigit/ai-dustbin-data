@@ -131,6 +131,36 @@ class SplitDataset(torch.utils.data.Dataset):
         return self.transform(im), label
 
 
+class PoolDataset(torch.utils.data.Dataset):
+    """One split of the shared pool (update/pool.py): the rows of <pool>/manifest.csv with that split.
+    Returns (tensor, label); .items = [(path, label)], and a path's stem is the row's crop_id.
+
+    The pool holds the detector's crops already (gray 128, item box + padding), so nothing is cropped.
+    The manifest, not the folder listing, decides what is in the split."""
+
+    def __init__(self, pool_dir, split, transform):
+        import csv
+        from pathlib import Path
+        root = Path(pool_dir)
+        with open(root / "manifest.csv", newline="", encoding="utf-8") as f:
+            self.rows = [r for r in csv.DictReader(f) if r["split"] == split]
+        if not self.rows:
+            raise RuntimeError(f"no '{split}' images in {root / 'manifest.csv'}")
+        self.items = [(root.joinpath(*r["path"].split("/")), LABELS.index(r["label"])) for r in self.rows]
+        missing = [p for p, _ in self.items if not p.is_file()]
+        if missing:
+            raise FileNotFoundError(f"{len(missing)} pool images are missing, e.g. {missing[0]}")
+        self.transform, self.split = transform, split
+
+    def __len__(self):
+        return len(self.items)
+
+    def __getitem__(self, i):
+        path, label = self.items[i]
+        with Image.open(path) as im:
+            return self.transform(im.convert("RGB")), label
+
+
 def _class_folder(value):
     """'dry' / 'wet' / 'dry waste' / 'wet waste' -> 'dry waste' / 'wet waste'."""
     v = str(value).strip().lower()
@@ -152,6 +182,8 @@ class SoftLabels:
     can share a file name, but not within one split and class. Two layouts are read:
       agreed:   split, class_folder, filename, teacher_wet_prob [, teacher_version]
       notebook: path, split, label (dry/wet), teacher_wet_prob   (teacher/ branch, v0)
+    A third layout is keyed by the shared pool's crop_id alone (update/run_update.py):
+      pool:     crop_id, teacher_wet_prob [, teacher_logit, fold, teacher_version]
     Train soft labels should be out-of-fold; this loader cannot check that."""
 
     def __init__(self, csv_path):
@@ -161,15 +193,28 @@ class SoftLabels:
         if not rows:
             raise SystemExit(f"{csv_path} is empty")
         cols = set(rows[0])
-        if "teacher_wet_prob" not in cols or "split" not in cols:
-            raise SystemExit(f"{csv_path}: needs split and teacher_wet_prob; found {sorted(cols)}")
+        self.p, self.by_id, self.duplicates = {}, {}, 0
+        if "teacher_wet_prob" not in cols:
+            raise SystemExit(f"{csv_path}: needs teacher_wet_prob; found {sorted(cols)}")
+        if "crop_id" in cols and not {"class_folder", "filename"} <= cols:
+            for r in rows:
+                p = float(r["teacher_wet_prob"])
+                if not 0.0 <= p <= 1.0:
+                    raise SystemExit(f"{csv_path}: teacher_wet_prob {p} is not a probability")
+                self.duplicates += r["crop_id"] in self.by_id
+                self.by_id.setdefault(r["crop_id"], p)
+            self.versions = sorted({r["teacher_version"] for r in rows if r.get("teacher_version")})
+            self.any_split = {}
+            return
+        if "split" not in cols:
+            raise SystemExit(f"{csv_path}: needs split and teacher_wet_prob (or crop_id and teacher_wet_prob); "
+                             f"found {sorted(cols)}")
         if {"class_folder", "filename"} <= cols:
             cls_of, name_of = (lambda r: r["class_folder"]), (lambda r: r["filename"])
         elif {"label", "path"} <= cols:
             cls_of, name_of = (lambda r: r["label"]), (lambda r: r["path"])
         else:
             raise SystemExit(f"{csv_path}: needs class_folder+filename or label+path; found {sorted(cols)}")
-        self.p, self.duplicates = {}, 0
         for r in rows:
             p = float(r["teacher_wet_prob"])
             if not 0.0 <= p <= 1.0:
@@ -188,6 +233,10 @@ class SoftLabels:
     def get_any_split(self, label, stem):
         """For human-labelled bin crops, whose split in the teacher's file is not fixed."""
         return self.any_split.get((CLASSES[label], stem))
+
+    def get_id(self, crop_id):
+        """Pool layout: the teacher's P(wet) for a pool crop_id (= the image's file stem), or None."""
+        return self.by_id.get(crop_id)
 
 
 def file_hashes(data_dir, splits=("val", "test")):

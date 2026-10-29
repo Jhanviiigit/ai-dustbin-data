@@ -21,9 +21,16 @@ epoch) always uses the true labels, so runs with and without distillation are co
 
 Human feedback (--feedback_dir <FeedbackStore folder>): the human-labelled crops are added to
 train/ (never val/ or test/).
+
+The shared pool (--pool <pool folder>, update/pool.py): trains on the pool's train rows (the
+Organik images, feedback crops and augmented copies together) and picks the epoch on its val rows.
+The pool holds the detector's crops already, so nothing is cropped, and feedback is already in it
+(--feedback_dir is not used). Soft labels are matched on crop_id. This is what update_student.py
+--pool runs for the update pipeline.
 """
 import argparse
 import random
+from collections import Counter
 from pathlib import Path
 
 import numpy as np
@@ -31,12 +38,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from common import (CLASSES, EVAL_PAD, GRAY, IMG_SIZE, LABELS, MASKS, TRAIN_PAD, VARIANTS, SoftLabels,
+from common import (CLASSES, EVAL_PAD, GRAY, IMG_SIZE, LABELS, MASKS, TRAIN_PAD, VARIANTS, PoolDataset, SoftLabels,
                     SplitDataset, build_model, collect_logits, eval_tf, file_hashes, load_checkpoint, load_feedback,
                     train_tf)
 
 p = argparse.ArgumentParser()
-p.add_argument("--variant", required=True, choices=VARIANTS)
+p.add_argument("--variant", choices=VARIANTS, help="not needed with --pool")
+p.add_argument("--pool", default=None, help="the shared pool folder (update/pool.py): train on its train rows, "
+               "pick the epoch on its val rows")
 p.add_argument("--data_root", default=".", help="folder that contains the dataset folders")
 p.add_argument("--data_dir", default=None, help="override the dataset folder")
 p.add_argument("--masks_dir", default=None, help=f"item masks (default: <data_root>/{MASKS})")
@@ -57,15 +66,21 @@ p.add_argument("--seed", type=int, default=42)
 args = p.parse_args()
 if not 0.0 <= args.distill_alpha <= 1.0:
     raise SystemExit("--distill_alpha must be between 0 and 1")
+if args.pool and (args.variant or args.feedback_dir or args.data_dir):
+    raise SystemExit("--pool is its own data: do not combine it with --variant, --data_dir or --feedback_dir "
+                     "(the feedback is already in the pool)")
+if not args.pool and not args.variant:
+    raise SystemExit("give --variant (gray, plate or bin) or --pool")
+variant = "pool" if args.pool else args.variant
 
 random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-data_dir = Path(args.data_dir or Path(args.data_root) / VARIANTS[args.variant])
-out_dir = Path(args.out or Path(__file__).parent / "runs" / args.variant)
+data_dir = Path(args.pool) if args.pool else Path(args.data_dir or Path(args.data_root) / VARIANTS[args.variant])
+out_dir = Path(args.out or Path(__file__).parent / "runs" / variant)
 out_dir.mkdir(parents=True, exist_ok=True)
-version = args.version or f"{args.variant}-s{args.seed}"
+version = args.version or f"{variant}-s{args.seed}"
 
-already_cropped = args.no_crop or args.variant == "bin"     # bin photos are the detector's crops
+already_cropped = args.no_crop or variant in ("bin", "pool")     # bin photos and the pool are the detector's crops
 masks_dir = None if already_cropped else Path(args.masks_dir or Path(args.data_root) / MASKS)
 if masks_dir is not None and not masks_dir.is_dir():
     raise SystemExit(f"masks folder not found: {masks_dir} (unzip dataset_D_v2_balanced.zip, or pass --no_crop)")
@@ -74,10 +89,19 @@ img_size = args.img_size or init_ckpt.get("img_size", IMG_SIZE)     # fine-tunin
 if args.init_weights and img_size != init_ckpt.get("img_size", IMG_SIZE):
     print(f"warning: --init_weights was trained at {init_ckpt.get('img_size', IMG_SIZE)} px, now {img_size} px")
 feedback = load_feedback(args.feedback_dir, file_hashes(data_dir)) if args.feedback_dir else []
-train_ds = SplitDataset(data_dir, "train", train_tf(img_size), masks_dir, TRAIN_PAD, seed=args.seed, extra=feedback)
-val_ds = SplitDataset(data_dir, "val", eval_tf(img_size), masks_dir, EVAL_PAD)
-print(f"{args.variant} ({version}): {data_dir}  train={len(train_ds)} (feedback {len(feedback)}) val={len(val_ds)}  "
-      f"size {img_size}  crops: {'item box + padding from ' + str(masks_dir) if masks_dir else 'off (whole images)'}")
+if args.pool:
+    train_ds = PoolDataset(data_dir, "train", train_tf(img_size))
+    val_ds = PoolDataset(data_dir, "val", eval_tf(img_size))
+    origins = Counter(r["origin"] for r in train_ds.rows)
+    pool_feedback = origins.get("feedback", 0)
+    print(f"pool ({version}): {data_dir}  train={len(train_ds)} {dict(origins)} val={len(val_ds)}  size {img_size}  "
+          f"crops: already the detector's")
+else:
+    train_ds = SplitDataset(data_dir, "train", train_tf(img_size), masks_dir, TRAIN_PAD, seed=args.seed, extra=feedback)
+    val_ds = SplitDataset(data_dir, "val", eval_tf(img_size), masks_dir, EVAL_PAD)
+    pool_feedback = 0
+    print(f"{variant} ({version}): {data_dir}  train={len(train_ds)} (feedback {len(feedback)}) val={len(val_ds)}  "
+          f"size {img_size}  crops: {'item box + padding from ' + str(masks_dir) if masks_dir else 'off (whole images)'}")
 
 # Class weights from the train counts, so the rarer class is not ignored.
 counts = np.bincount([y for _, y in train_ds.items], minlength=len(CLASSES))
@@ -91,7 +115,10 @@ if args.soft_labels:
     fb_paths = {Path(p) for p, _ in feedback}
     soft = np.full(len(train_ds), np.nan, dtype=np.float32)
     for i, (path, y) in enumerate(train_ds.items):
-        q = labels_csv.get_any_split(y, path.stem) if path in fb_paths else labels_csv.get("train", y, path.stem)
+        if args.pool:
+            q = labels_csv.get_id(path.stem)                  # pool crop_id = file stem
+        else:
+            q = labels_csv.get_any_split(y, path.stem) if path in fb_paths else labels_csv.get("train", y, path.stem)
         if q is not None:
             soft[i] = q
     have = int(np.isfinite(soft).sum())
@@ -173,13 +200,13 @@ for epoch in range(1, args.epochs + 1):
             "temperature": 1.0,             # set by calibrate.py
             "calibrated": False,            # calibrate.py sets True; promote.py refuses uncalibrated weights
             "version": version,
-            "variant": args.variant,
+            "variant": variant,
             "init_from": args.init_weights,   # None = ImageNet
             "soft_labels": args.soft_labels,
             "teacher_version": ",".join(labels_csv.versions) if soft is not None else None,
             "distill_alpha": args.distill_alpha if soft is not None else None,
             "feedback_dir": args.feedback_dir,
-            "feedback_used": len(feedback),
+            "feedback_used": pool_feedback if args.pool else len(feedback),
             "seed": args.seed,
             "classes": CLASSES,
             "labels": LABELS,
