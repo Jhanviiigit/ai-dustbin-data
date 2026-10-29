@@ -16,7 +16,8 @@ Refuses to run if anything was shipped or deployed already: after the baseline, 
 come only through run_update.py and its gate.
 
 The baseline is organik_gray_v2 (release student-organik_gray_v2): trained on the Organik train
-split only, which is pool/train; it never saw pool/val or pool/test_fixed.
+split only, which is pool/train; it did not train on pool/val or pool/test_fixed. (pool/val picked its
+best epoch, epoch 6; pool/test_fixed was not used for any choice of the model.)
 """
 
 import argparse

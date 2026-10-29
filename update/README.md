@@ -152,6 +152,14 @@ val rule can be met (Wilson lower bound of precision ≥ 95% per class needs ≥
 class; there are 36). On the Organik test set 0.8 caught all 7 errors and asked a person about
 15% of items; 0.6 caught 2.
 
+**Read these numbers with care.** The 0.8 was read off the same 72 images that are now
+`test_fixed`, so "7 of 7 caught, 15% asked" is not an independent test result: it is where the
+threshold came from. Five of the 7 errors are one item (a green plastic straw), and 72 images is
+too few to report. The headline accuracy of the student is the 5-fold cross-validation result
+in [`student/README.md`](../student/README.md) (96.75%, std 1.4); the 90.3% on `test_fixed` only
+shows that the pipeline runs. Treat 0.8 as a starting value and replace it with a threshold
+picked on val once the val rule can be met, or on bin-camera audits.
+
 ## Sample pool
 
 Release [`sample-pool-v0`](https://github.com/Jhanviiigit/ai-dustbin-data/releases/tag/sample-pool-v0)
