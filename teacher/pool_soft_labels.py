@@ -31,6 +31,9 @@ def pool_frame(pool_dir):
     """The pool's manifest as the frame teacher.py works on (one row per image, in manifest order)."""
     pool_dir = Path(pool_dir)
     m = pd.read_csv(pool_dir / "manifest.csv", dtype=str, keep_default_na=False)
+    bad = set(m["label"]) - {"dry", "wet"}
+    if bad:
+        raise SystemExit(f"unknown labels in manifest: {bad}")
     y = (m["label"] == "wet").astype(int)
     return pd.DataFrame({
         "dataset": "pool", "split": m["split"], "class_folder": [CLASSES[i] for i in y],
@@ -70,7 +73,7 @@ def main(a):
     z = out_of_fold_logits(X, y, g, v, t.C)
     folds = fold_of_groups(X, y, g)
     table = pd.DataFrame({
-        "crop_id": train.crop_id, "teacher_logit": z, "teacher_wet_prob": sigmoid(z / t.temperature),
+        "crop_id": train.crop_id, "teacher_logit": z, "teacher_wet_prob": sigmoid(z),
         "fold": [folds[x] for x in train.group], "teacher_version": a.version})
     if table.crop_id.duplicated().any():
         raise SystemExit("duplicate crop_ids in the pool's train rows")
