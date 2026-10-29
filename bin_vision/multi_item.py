@@ -428,7 +428,7 @@ if __name__ == "__main__":
     parser.add_argument("--student_dir",    default=None, help="Folder containing the student model's code (leave out for count-only mode)")
     parser.add_argument("--student_module", default="classifier", help="Module in student_dir that defines WasteClassifier")
     parser.add_argument("--model_path",     default=None, help="Student weights file")
-    parser.add_argument("--threshold",      type=float, default=0.6)
+    parser.add_argument("--threshold",      type=float, default=0.8)
     parser.add_argument("--webcam",         action="store_true")
     parser.add_argument("--camera",         type=int, default=0)
     parser.add_argument("--reference",      help="Photo of the empty plate")

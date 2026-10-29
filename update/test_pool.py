@@ -17,7 +17,7 @@ import numpy as np
 from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from pool import COLUMNS, Pool, PoolError, bucket, hamming, phash
+from pool import COLUMNS, Pool, PoolError, bucket, hamming, phash, seed_from_organik
 
 failures = []
 
@@ -84,6 +84,39 @@ check(again.split_of_group("load-9") == "test_audit", "reloaded pool remembers g
 check(again.check() == [], "check() finds no problems")
 os.remove(again.abs_path(again.by_id["c2"]))
 check(any("file missing" in p for p in again.check()), "check() reports a missing file")
+
+print("Organik seed (dataset_organik_v2 layout):")
+
+
+def organik(folder, rows):
+    """rows: [(split, class_folder, filename, group)] -> a dataset_organik_v2-style folder."""
+    os.makedirs(folder)
+    with open(os.path.join(folder, "manifest.csv"), "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["split", "class_folder", "filename", "new_path", "source", "group", "group_v1", "source_folder"])
+        for i, (split, cls, name, group) in enumerate(rows):
+            new_path = f"{split}/{cls}/{name}"
+            os.makedirs(os.path.join(folder, split, cls), exist_ok=True)
+            image(100 + i).save(os.path.join(folder, *new_path.split("/")), quality=95)
+            w.writerow([split, cls, name, new_path, "organik", group, group, "Organic"])
+    return folder
+
+
+og = organik(os.path.join(root, "og"), [("train", "wet waste", "a1.jpg", 0), ("train", "wet waste", "a2.jpg", 0),
+                                         ("train", "dry waste", "b1.jpg", 1), ("val", "dry waste", "c1.jpg", 2),
+                                         ("test", "wet waste", "d1.jpg", 3)])
+op = Pool(os.path.join(root, "opool"))
+added = seed_from_organik(op, og)
+check(dict(added) == {"train": 3, "val": 1, "test_fixed": 1}, f"train -> train, val -> val, test -> test_fixed {dict(added)}")
+r = op.by_id["organik_a1"]
+check(r["origin"] == "public" and r["group_id"] == "organik_g0" and r["label"] == "wet" and r["added_in"] == "seed",
+      "origin public, group_id organik_g<group>, label from the class folder")
+check(op.check() == [] and op.split_of_group("organik_g3") == "test_fixed", "seeded pool passes check()")
+check(seed_from_organik(op, og) == {}, "seeding again adds nothing")
+bad = organik(os.path.join(root, "og_bad"), [("train", "wet waste", "e1.jpg", 7), ("test", "wet waste", "e2.jpg", 7)])
+refused(lambda: seed_from_organik(Pool(os.path.join(root, "bpool")), bad), "an Organik group in both train and test")
+dup = organik(os.path.join(root, "og_dup"), [("train", "wet waste", "f1.jpg", 8), ("train", "dry waste", "f1.jpg", 9)])
+refused(lambda: seed_from_organik(Pool(os.path.join(root, "dpool")), dup), "the same file name in two class folders")
 
 print("Helpers:")
 check(phash(image(1)) == phash(image(1)) and len(phash(image(1))) == 16, "phash is stable, 16 hex digits")

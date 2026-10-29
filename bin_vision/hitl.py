@@ -49,7 +49,7 @@ from multi_item import item_crop
 
 LOAD_FIELDS = ["load_id", "timestamp", "student_version", "n_items", "composition", "load_confidence",
                "decision", "trigger", "human_labels", "final_action"]
-THRESHOLD_FALLBACK = 0.6      # until a deployed student brings a threshold picked on val
+THRESHOLD_FALLBACK = 0.8      # until val is big enough for the agreed rule (Wilson LB >= 95% per class)
 AUDIT_EVERY = 10              # agreed: 1 in 10 auto-tilt loads is audited
 FEEDBACK_FIELDS = ["crop_id", "load_id", "timestamp", "student_version", "item_index", "box",
                    "student_label", "student_confidence", "load_composition", "decision", "trigger",
@@ -58,7 +58,7 @@ FEEDBACK_FIELDS = ["crop_id", "load_id", "timestamp", "student_version", "item_i
 
 def load_deployed(deploy_dir):
     """<deploy_dir>/current/{weights.pt, info.json} -> {"weights", "version", "threshold",
-    "threshold_source", "info_mtime"}. A missing threshold falls back to 0.6."""
+    "threshold_source", "info_mtime"}. A missing threshold falls back to THRESHOLD_FALLBACK (0.8)."""
     cur = os.path.join(deploy_dir, "current")
     weights, info_path = os.path.join(cur, "weights.pt"), os.path.join(cur, "info.json")
     if not os.path.isfile(weights) or not os.path.isfile(info_path):
@@ -68,7 +68,7 @@ def load_deployed(deploy_dir):
     threshold = info.get("threshold")
     return {"weights": weights, "version": info.get("version") or "unknown",
             "threshold": float(threshold) if threshold is not None else THRESHOLD_FALLBACK,
-            "threshold_source": info.get("threshold_source", "deploy") if threshold is not None else "fallback 0.6",
+            "threshold_source": info.get("threshold_source", "deploy") if threshold is not None else f"fallback {THRESHOLD_FALLBACK}",
             "info_mtime": os.path.getmtime(info_path)}
 
 

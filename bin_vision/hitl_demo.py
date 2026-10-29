@@ -21,7 +21,7 @@ Keys in the camera window: r = capture the empty-plate reference, q = quit.
 
 --deploy uses the student the update pipeline deployed (deploy/current) with its version
 and threshold, and switches to a newly deployed one between loads. --threshold overrides it;
-without either, 0.6.
+without either, 0.8 (THRESHOLD_FALLBACK).
 """
 
 import argparse
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     model.add_argument("--model_path",       help="A weights file (no deploy folder)")
     parser.add_argument("--student_version", default=None, help="Name logged with every load (default: deployed version, else weights file name)")
     parser.add_argument("--feedback",        required=True, help="Feedback store folder")
-    parser.add_argument("--threshold",       type=float, default=None, help="Override (default: the deployed one, else 0.6)")
+    parser.add_argument("--threshold",       type=float, default=None, help="Override (default: the deployed one, else 0.8)")
     parser.add_argument("--audit_every",     type=int, default=AUDIT_EVERY, help="X: audit every Xth auto-tilt load")
     parser.add_argument("--audit_mode",      choices=["every", "random"], default="every")
     parser.add_argument("--wait",            type=float, default=1.5, help="Seconds after the last drop before deciding")
@@ -67,7 +67,7 @@ if __name__ == "__main__":
         path = dep["weights"] if dep else args.model_path
         version = args.student_version or (dep["version"] if dep else os.path.splitext(os.path.basename(path))[0])
         threshold = args.threshold if args.threshold is not None else (dep["threshold"] if dep else THRESHOLD_FALLBACK)
-        src = "--threshold" if args.threshold is not None else (dep["threshold_source"] if dep else "fallback 0.6")
+        src = "--threshold" if args.threshold is not None else (dep["threshold_source"] if dep else f"fallback {THRESHOLD_FALLBACK}")
         print(f"student {version} from {path}, threshold {threshold:.3f} ({src})")
         return make_classify(load_student(args.student_dir, path, args.student_module)), version, threshold, dep
 

@@ -13,7 +13,7 @@ Checks:
     load is audited ("every" mode); "random" mode audits about 1/X
   - resolve(): same class -> tilt, dry+wet -> separate, a skipped item -> remove
   - the agreed audit rate is 1 in 10; after a restart, resume() keeps "every" at every Xth
-  - load_deployed(): deploy/current's weights, version and threshold (0.6 if none)
+  - load_deployed(): deploy/current's weights, version and threshold (0.8 if none)
   - FeedbackStore: one loads.csv row per load; one feedback.csv row and one crop per
     human-labelled item; a frame only for reviewed loads; summarize() adds up
 
@@ -94,7 +94,7 @@ check(d["version"] == "student_u3" and d["threshold"] == 0.83 and d["weights"].e
       "version, threshold and weights from deploy/current (run_update.py's info.json)")
 json.dump({"version": "student_u4", "threshold": None}, open(os.path.join(dep, "current", "info.json"), "w"))
 d = load_deployed(dep)
-check(d["threshold"] == 0.6 and d["threshold_source"] == "fallback 0.6", "no threshold deployed: 0.6")
+check(d["threshold"] == 0.8 and d["threshold_source"] == "fallback 0.8", "no threshold deployed: 0.8")
 
 print("Loads through the store:")
 pool = ItemPool(args.clean, args.masks, "test", seed=7)
