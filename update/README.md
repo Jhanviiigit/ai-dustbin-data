@@ -169,11 +169,11 @@ There is no bin yet, so the bin was replayed with real photos. Every component i
 `promote.py`, `run_update.py`; no stand-ins. The only stand-ins are the *inputs*: the "bin feedback"
 is real Organik photos that were held back, and the label a person would give is the dataset's label.
 
-**This run used the teacher as it was before PR #19**, which fitted on the pool's Organik rows. The
-teacher must not learn from the student's data, so since #19 it is fitted on the public datasets and
-the human-checked feedback crops only. The run shows that the parts work together; the teacher row and
-the student result below do not describe the current design, and the run has to be repeated with the
-current teacher before any of its numbers are quoted.
+**Which teacher:** this run used the teacher as merged in PR #17, which fitted on the pool's Organik rows.
+That was an error against the design: the teacher learns from the public datasets and the human-checked
+feedback crops only, never from the student's data. PR #19 fixed it, and the teacher now does exactly
+that. So the teacher row and the student result below are from the earlier teacher; a rerun with the
+current one is still to do.
 
 | Step | What happened |
 |---|---|
@@ -181,7 +181,7 @@ current teacher before any of its numbers are quoted.
 | baseline | `train.py --pool` (from ImageNet, 15 epochs, val 95.8%), calibrated (T 1.0075), shipped by `baseline.py`: 13 errors on `test_fixed` (81.9%) |
 | the bin | the deployed student labelled the held-back photos; its review policy (confidence < 0.8, plus 1 in 10 audits) sent 33 of 124 to a person (23 unsure, 10 audits); 13 of the 33 it had wrong |
 | ingest | trigger said wait (6 of 15 new train groups, 1 wet group of the 3 needed), so `--force`; 20 train, 5 val, 7 `test_audit`, 1 `test_hard` |
-| teacher | `pool_soft_labels.py` as it was before #19 (fitted on the pool's Organik rows): 544 train soft labels (378 Organik, 146 augmented, 20 feedback); val 96.1% |
+| teacher | `pool_soft_labels.py` as in #17 (fitted on the pool's Organik rows; fixed in #19): 544 train soft labels (378 Organik, 146 augmented, 20 feedback); val 96.1% |
 | student | `update_student.py --pool`: 10 epochs from the current student, T 0.8935 fitted on 77 val images, threshold null (the val rule cannot be met with 77 images) |
 | gate | accepted: 15 errors vs 13 on `test_fixed` (+2, the limit; McNemar p 0.5), `test_audit` 7 images (reported only) |
 | deploy | `deploy/current` = `student_u1`, threshold 0.8 (fallback), `models.csv` row `update_1` |
