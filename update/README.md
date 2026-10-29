@@ -62,7 +62,7 @@ python update/run_update.py --pool pool                          # carry on afte
 | Step | What happens |
 |---|---|
 | 1. ingest | `ingest.py --commit`, only when the last update has finished. Trigger says wait → exit 2 |
-| 2. teacher | Waits (exit 3) for `runs/teacher_v(N+1)/soft_labels.csv` (`python teacher/pool_soft_labels.py --pool pool --version teacher_v(N+1) --out <that path>`, e.g. on Colab; `teacher_v1` is the public-data teacher), then checks it: a row for every `train` `crop_id`, none for val/test, probabilities in [0, 1] |
+| 2. teacher | Waits (exit 3) for `runs/teacher_v(N+1)/soft_labels.csv` (`python teacher/pool_soft_labels.py --pool pool --version teacher_v(N+1) --gray dataset_D_v2_balanced --out <that path>`, e.g. on Colab; the teacher is fitted on the public datasets plus the human-checked feedback crops and **never on Organik**; `teacher_v1` is the public-data teacher), then checks it: a row for every `train` `crop_id`, none for val/test, probabilities in [0, 1] |
 | 3. student | `update_student.py --current … --version student_uN --pool … --soft_labels … --out runs/student_uN` |
 | 4. gate | `promote.py --pool`: ≤ 2 more errors than the current **and** the best shipped version on `test_fixed`, and on `test_audit` from 30 images; `test_hard` reported only |
 | 5. deploy | accepted → `deploy/current/{weights.pt, info.json}` (version, threshold, temperature); the old one → `deploy/previous` |
@@ -108,7 +108,8 @@ Rules enforced by `pool.py`: unique `crop_id`s; only the agreed values; **a grou
 never changes**; **test splits hold real images only**; an augmented copy points to an
 existing original in train, in the same group.
 
-**Readers** (teacher, student): train on `train` only (plus public data); use `val` for
+**Readers** (teacher, student): train on `train` only (plus public data); the teacher also leaves out the
+Organik rows (`origin` `public` with `group_id` `organik_g<N>`, and their augmented copies); use `val` for
 settings; score `test_fixed`, `test_audit` and `test_hard` separately; never train on
 `val` or any test split. Map `label` `dry` -> 0, `wet` -> 1. Use `group_id` for grouped folds.
 
@@ -168,13 +169,20 @@ There is no bin yet, so the bin was replayed with real photos. Every component i
 `promote.py`, `run_update.py`; no stand-ins. The only stand-ins are the *inputs*: the "bin feedback"
 is real Organik photos that were held back, and the label a person would give is the dataset's label.
 
+**The teacher** (`teacher/pool_soft_labels.py`) is fitted on the public datasets (`dataset_D_v2_balanced`,
+optionally `dataset_C_v2`) plus the human-checked feedback crops and their augmented copies. It never
+trains on Organik or on `test_fixed`. C and the temperature are picked on the public val splits plus the
+pool's non-Organik val rows. Organik train images get the full teacher's soft labels (it never saw them);
+feedback crops get out-of-fold labels. The run below was made with the earlier version of the script,
+which fitted on the pool's Organik rows; it has not been repeated with the current one yet.
+
 | Step | What happened |
 |---|---|
 | seed | `pool.py seed --organik` on `dataset_organik_v2` minus 24 held-back train groups (124 images): train 378, val 72, `test_fixed` 72 |
 | baseline | `train.py --pool` (from ImageNet, 15 epochs, val 95.8%), calibrated (T 1.0075), shipped by `baseline.py`: 13 errors on `test_fixed` (81.9%) |
 | the bin | the deployed student labelled the held-back photos; its review policy (confidence < 0.8, plus 1 in 10 audits) sent 33 of 124 to a person (23 unsure, 10 audits); 13 of the 33 it had wrong |
 | ingest | trigger said wait (6 of 15 new train groups, 1 wet group of the 3 needed), so `--force`; 20 train, 5 val, 7 `test_audit`, 1 `test_hard` |
-| teacher | `pool_soft_labels.py`: 544 train soft labels (378 Organik, 146 augmented, 20 feedback); val 96.1% |
+| teacher | `pool_soft_labels.py` (earlier version, fitted on the pool's Organik rows): 544 train soft labels (378 Organik, 146 augmented, 20 feedback); val 96.1% |
 | student | `update_student.py --pool`: 10 epochs from the current student, T 0.8935 fitted on 77 val images, threshold null (the val rule cannot be met with 77 images) |
 | gate | accepted: 15 errors vs 13 on `test_fixed` (+2, the limit; McNemar p 0.5), `test_audit` 7 images (reported only) |
 | deploy | `deploy/current` = `student_u1`, threshold 0.8 (fallback), `models.csv` row `update_1` |
