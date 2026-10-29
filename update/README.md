@@ -3,7 +3,8 @@
 Turns human feedback from the bin into a better student, safely. Built in phases:
 **phase 1 (the shared pool)**, **phase 2 (feedback → pool)** and **phase 3 (`run_update.py`:
 teacher, student, gate, deploy, `models.csv`)** are done. Phase 3 calls
-`update_student.py --pool`, which the student side is adding.
+`update_student.py --pool` (`student/README.md`, "One update of the student") and, for the teacher's
+soft labels, `teacher/pool_soft_labels.py`.
 
 | File | What it does |
 |---|---|
@@ -61,7 +62,7 @@ python update/run_update.py --pool pool                          # carry on afte
 | Step | What happens |
 |---|---|
 | 1. ingest | `ingest.py --commit`, only when the last update has finished. Trigger says wait → exit 2 |
-| 2. teacher | Waits (exit 3) for `runs/teacher_v(N+1)/soft_labels.csv` (run on Colab; `teacher_v1` is the public-data teacher), then checks it: a row for every `train` `crop_id`, none for val/test, probabilities in [0, 1] |
+| 2. teacher | Waits (exit 3) for `runs/teacher_v(N+1)/soft_labels.csv` (`python teacher/pool_soft_labels.py --pool pool --version teacher_v(N+1) --out <that path>`, e.g. on Colab; `teacher_v1` is the public-data teacher), then checks it: a row for every `train` `crop_id`, none for val/test, probabilities in [0, 1] |
 | 3. student | `update_student.py --current … --version student_uN --pool … --soft_labels … --out runs/student_uN` |
 | 4. gate | `promote.py --pool`: ≤ 2 more errors than the current **and** the best shipped version on `test_fixed`, and on `test_audit` from 30 images; `test_hard` reported only |
 | 5. deploy | accepted → `deploy/current/{weights.pt, info.json}` (version, threshold, temperature); the old one → `deploy/previous` |
@@ -159,6 +160,29 @@ too few to report. The headline accuracy of the student is the 5-fold cross-vali
 in [`student/README.md`](../student/README.md) (96.75%, std 1.4); the 90.3% on `test_fixed` only
 shows that the pipeline runs. Treat 0.8 as a starting value and replace it with a threshold
 picked on val once the val rule can be met, or on bin-camera audits.
+
+## Tested end to end (2026-10-29), on real data
+
+There is no bin yet, so the bin was replayed with real photos. Every component is the real one:
+`pool.py`, `baseline.py`, `ingest.py`, `teacher/pool_soft_labels.py`, `update_student.py --pool`,
+`promote.py`, `run_update.py`; no stand-ins. The only stand-ins are the *inputs*: the "bin feedback"
+is real Organik photos that were held back, and the label a person would give is the dataset's label.
+
+| Step | What happened |
+|---|---|
+| seed | `pool.py seed --organik` on `dataset_organik_v2` minus 24 held-back train groups (124 images): train 378, val 72, `test_fixed` 72 |
+| baseline | `train.py --pool` (from ImageNet, 15 epochs, val 95.8%), calibrated (T 1.0075), shipped by `baseline.py`: 13 errors on `test_fixed` (81.9%) |
+| the bin | the deployed student labelled the held-back photos; its review policy (confidence < 0.8, plus 1 in 10 audits) sent 33 of 124 to a person (23 unsure, 10 audits); 13 of the 33 it had wrong |
+| ingest | trigger said wait (6 of 15 new train groups, 1 wet group of the 3 needed), so `--force`; 20 train, 5 val, 7 `test_audit`, 1 `test_hard` |
+| teacher | `pool_soft_labels.py`: 544 train soft labels (378 Organik, 146 augmented, 20 feedback); val 96.1% |
+| student | `update_student.py --pool`: 10 epochs from the current student, T 0.8935 fitted on 77 val images, threshold null (the val rule cannot be met with 77 images) |
+| gate | accepted: 15 errors vs 13 on `test_fixed` (+2, the limit; McNemar p 0.5), `test_audit` 7 images (reported only) |
+| deploy | `deploy/current` = `student_u1`, threshold 0.8 (fallback), `models.csv` row `update_1` |
+
+What this shows: the parts work together, from feedback to a deployed student. What it does **not**
+show is that an update helps: the new student was not better (the gate allows up to 2 more errors),
+the batch was 20 feedback crops, and the first student was trained on a deliberately small slice.
+Run it again on real bin feedback.
 
 ## Sample pool
 

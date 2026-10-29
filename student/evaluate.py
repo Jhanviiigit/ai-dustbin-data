@@ -30,12 +30,17 @@ def load_groups(data_dir, split="test"):
     on Linux, Path('test\\\\dry waste\\\\x.jpg').stem would be the whole string."""
     with open(Path(data_dir) / "manifest.csv", newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
-    cols = rows[0].keys()
-    if not {"new_path", "source", "split"} <= set(cols):
-        raise SystemExit(f"manifest.csv needs new_path, source and split columns; found {list(cols)}")
-    keep = [c for c in ("source",) + OPTIONAL_GROUPS if c in cols]
-    return {c: {PurePosixPath(r["new_path"].replace("\\", "/")).stem: r[c] for r in rows if r["split"] == split}
-            for c in keep}
+    cols = set(rows[0].keys())
+    if {"new_path", "source", "split"} <= cols:
+        path_col, source_col = "new_path", "source"
+    elif {"path", "origin", "split"} <= cols:               # the shared pool (update/pool.py): crop_id.jpg, origin
+        path_col, source_col = "path", "origin"
+    else:
+        raise SystemExit(f"manifest.csv needs new_path, source and split columns (or path, origin, split); "
+                         f"found {sorted(cols)}")
+    columns = {"source": source_col, **{c: c for c in OPTIONAL_GROUPS if c in cols}}
+    return {name: {PurePosixPath(r[path_col].replace("\\", "/")).stem: r[col] for r in rows if r["split"] == split}
+            for name, col in columns.items()}
 
 
 def metrics(weights, data_dir=None, split="test", no_crop=False, masks_dir=None):

@@ -362,13 +362,41 @@ accuracy will be too good.
 
 ## One update of the student
 
+**In the update pipeline** (`update/run_update.py` calls this; it is the path to use):
+
+```bash
+python student/update_student.py --current deploy/current/weights.pt --version student_u1 \
+    --pool pool --soft_labels runs/teacher_v2/soft_labels.csv --out runs/student_u1
+python student/promote.py --candidate runs/student_u1/weights.pt \
+    --current deploy/current/weights.pt --pool pool                  # the gate
+```
+
+`--pool` reads the shared pool (`update/pool.py`) and nothing else:
+- trains (`train.py --pool`) from the current student on the pool's **train** rows: the Organik
+  images, the feedback crops and the augmented copies. The pool holds the detector's crops
+  already, so nothing is cropped; the feedback is already in it (`--feedback_dir` is refused);
+- picks the epoch and calibrates on the pool's **val** rows. It never reads `val`/`test_*` for
+  training and never touches a test split;
+- soft labels are matched on `crop_id` (the image's file name without `.jpg`), the layout
+  `teacher/pool_soft_labels.py` writes: `crop_id, teacher_wet_prob [, teacher_logit, fold, teacher_version]`;
+- **temperature:** the fit on val, unless it lands on the edge of the search range (a val set
+  with no or few errors, where the fit runs to T = 0.05 and makes every prediction look certain):
+  then the current student's temperature is kept, and `update.json` / the weights say so
+  (`calibration_note`);
+- **review threshold** in `update.json` (`threshold`, `threshold_source`): the lowest confidence at
+  which, among val images decided on their own, the Wilson lower bound of precision is at least 95%
+  for both classes. With too few val images this cannot be met (even all-correct needs about 73
+  per class; there are 36), so `threshold` is `null` and the pipeline keeps its fallback of 0.8.
+
+**Outside the pipeline** (a `dataset_bin` folder, no pool):
+
 ```bash
 python student/update_student.py --current student/releases/student_v1/weights.pt \
     --version student_v2 --data_root . \
     --feedback_dir bin_feedback --soft_labels teacher/soft_labels_v2.csv
 
 python student/promote.py --candidate student/runs/student_v2/weights.pt \
-    --current student/releases/student_v1/weights.pt --pool pool     # the gate (or --data_dir dataset_bin)
+    --current student/releases/student_v1/weights.pt --data_dir dataset_bin     # the gate (or --pool pool)
 ```
 
 `update_student.py` runs `train.py --variant bin` from the current weights (on

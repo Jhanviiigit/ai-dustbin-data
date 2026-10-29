@@ -5,6 +5,11 @@
 Finds the single value T that minimises the val NLL of softmax(logits / T), writes it
 into the checkpoint and to temperature.json next to it. T > 1 means the raw model was
 over-confident. Accuracy and the predicted label never change; only the confidence does.
+
+If the fit lands on the edge of the search range (val has too few errors, or is perfectly
+classified, so the NLL keeps falling as T -> 0), it is not a calibration. With
+--fallback_from <weights.pt> the temperature of that model (the student being replaced) is
+kept instead, and the weights record that; without it the edge value is written, with a warning.
 """
 import argparse
 import json
@@ -49,6 +54,8 @@ if __name__ == "__main__":
     p.add_argument("--masks_dir", default=None, help="default: the masks the model was trained with (item crops)")
     p.add_argument("--no_crop", action="store_true",
                    help="images are already crops (e.g. dataset_bin): do not cut them with masks")
+    p.add_argument("--fallback_from", default=None,
+                   help="weights whose temperature is kept when the fit lands on the edge of the search range")
     args = p.parse_args()
 
     model, ckpt = load_checkpoint(args.weights)
@@ -58,18 +65,25 @@ if __name__ == "__main__":
     logits, labels = collect_logits(model, val_ds)
 
     T = fit_temperature(logits, labels)
-    before = F.softmax(logits, 1)
-    after = F.softmax(logits / T, 1)
+    note = None
     print(f"val images {len(val_ds)}   temperature T = {T:.4f}")
     if T <= T_MIN * 1.02 or T >= T_MAX / 1.02:
         print(f"warning: T hit the search limit [{T_MIN}, {T_MAX}]: the val set is too small or too easy "
               f"for a reliable calibration")
+        if args.fallback_from:
+            kept = float(load_checkpoint(args.fallback_from)[1]["temperature"])
+            note = f"the val fit hit the search limit (T = {T:.4f}); kept T = {kept:.4f} of {args.fallback_from}"
+            print(note)
+            T = kept
+    before = F.softmax(logits, 1)
+    after = F.softmax(logits / T, 1)
     print(f"NLL {F.nll_loss(before.log(), labels):.4f} -> {F.nll_loss(after.log(), labels):.4f}")
     print(f"ECE {ece(before, labels):.4f} -> {ece(after, labels):.4f}")
 
     ckpt["temperature"] = T
     ckpt["calibrated"] = True
-    ckpt["calibrated_on"] = str(data_dir)         # which val split T was fitted on
+    ckpt["calibrated_on"] = str(data_dir) + (f" ({note})" if note else "")   # which val split T was fitted on
+    ckpt["calibration_note"] = note
     ckpt["calibration_images"] = len(val_ds)
     torch.save(ckpt, args.weights)
     out = Path(args.weights).with_name("temperature.json")
