@@ -241,10 +241,14 @@ def suspect_multiple(features, rule):
     return None
 
 
-# Tuned on synthetic val-split scenes (test_counting.py): <= 5% false alarms on single
-# items. max_area_frac depends on how big one item looks to the camera, so
-# re-tune it on real bin photos once the camera is mounted.
-DEFAULT_RULE = ShapeRule(max_area_frac=0.09, min_notch2=0.5)
+# min_notch2 was tuned on synthetic val-split scenes (test_counting.py).
+# max_area_frac depends on how big one item looks to the camera. Synthetic scenes gave 0.09, but
+# on 19 real camera frames (nvcamtest_8207, one session, 14 single-item frames) a single item took
+# 3% to 23% of the frame (citrus 12-13%, plastic wrap 17-18%, cucumber 23%), so 0.09 stopped the
+# plate on 6 of 14 single items ("SEPARATE"). 0.25 clears every single item seen there. Area cannot
+# separate touching items from one large item (three touching wrappers were 8%, one wrapper 8%),
+# so this is a provisional value: re-tune it on the bin's own camera once it is mounted.
+DEFAULT_RULE = ShapeRule(max_area_frac=0.25, min_notch2=0.5)
 
 
 class DropCounter:
