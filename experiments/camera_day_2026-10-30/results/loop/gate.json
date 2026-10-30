@@ -1,0 +1,185 @@
+{
+ "version": "student_u1",
+ "candidate": "C:\\Users\\jhanv\\AppData\\Local\\Temp\\camday\\sys\\runs\\student_u1\\weights.pt",
+ "calibrated": true,
+ "temperature": 0.36291244626045227,
+ "calibrated_on": "C:\\Users\\jhanv\\AppData\\Local\\Temp\\camday\\sys\\pool",
+ "max_extra_errors": 2,
+ "sets": {
+  "test_fixed": {
+   "gated": true,
+   "n": 72,
+   "candidate": {
+    "n": 72,
+    "errors": 3,
+    "accuracy": 0.9583333333333334,
+    "accuracy_ci": [
+     0.8845072317804198,
+     0.9857291926441228
+    ],
+    "per_class": {
+     "dry": {
+      "support": 36,
+      "precision": 1.0,
+      "recall": 0.9166666666666666,
+      "f1": 0.9565217391304348,
+      "recall_ci": [
+       0.781733086137824,
+       0.9712513888881098
+      ]
+     },
+     "wet": {
+      "support": 36,
+      "precision": 0.9230769230769231,
+      "recall": 1.0,
+      "f1": 0.9600000000000001,
+      "recall_ci": [
+       0.9035813700311206,
+       1.0
+      ]
+     }
+    },
+    "balanced_accuracy": 0.9583333333333333
+   },
+   "shipped_errors": {
+    "organik_gray_v2": 7
+   },
+   "best": "organik_gray_v2",
+   "vs_best": {
+    "n": 72,
+    "only_a_wrong": 1,
+    "only_b_wrong": 5,
+    "both_wrong": 2,
+    "extra_errors": -4,
+    "mcnemar_p": 0.21875
+   },
+   "vs_current": {
+    "n": 72,
+    "only_a_wrong": 1,
+    "only_b_wrong": 5,
+    "both_wrong": 2,
+    "extra_errors": -4,
+    "mcnemar_p": 0.21875
+   }
+  },
+  "test_audit": {
+   "gated": false,
+   "n": 9,
+   "candidate": {
+    "n": 9,
+    "errors": 0,
+    "accuracy": 1.0,
+    "accuracy_ci": [
+     0.700854948272956,
+     1.0
+    ],
+    "per_class": {
+     "dry": {
+      "support": 5,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "recall_ci": [
+       0.5655175313406071,
+       1.0
+      ]
+     },
+     "wet": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "recall_ci": [
+       0.5101091596030786,
+       0.9999999999999999
+      ]
+     }
+    },
+    "balanced_accuracy": 1.0
+   },
+   "shipped_errors": {
+    "organik_gray_v2": 1
+   },
+   "best": "organik_gray_v2",
+   "vs_best": {
+    "n": 9,
+    "only_a_wrong": 0,
+    "only_b_wrong": 1,
+    "both_wrong": 0,
+    "extra_errors": -1,
+    "mcnemar_p": 1.0
+   },
+   "vs_current": {
+    "n": 9,
+    "only_a_wrong": 0,
+    "only_b_wrong": 1,
+    "both_wrong": 0,
+    "extra_errors": -1,
+    "mcnemar_p": 1.0
+   }
+  },
+  "test_hard": {
+   "gated": false,
+   "n": 5,
+   "candidate": {
+    "n": 5,
+    "errors": 0,
+    "accuracy": 1.0,
+    "accuracy_ci": [
+     0.5655175313406071,
+     1.0
+    ],
+    "per_class": {
+     "dry": {
+      "support": 1,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "recall_ci": [
+       0.2065493117918027,
+       1.0
+      ]
+     },
+     "wet": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "recall_ci": [
+       0.5101091596030786,
+       0.9999999999999999
+      ]
+     }
+    },
+    "balanced_accuracy": 1.0
+   },
+   "shipped_errors": {
+    "organik_gray_v2": 1
+   },
+   "best": "organik_gray_v2",
+   "vs_best": {
+    "n": 5,
+    "only_a_wrong": 0,
+    "only_b_wrong": 1,
+    "both_wrong": 0,
+    "extra_errors": -1,
+    "mcnemar_p": 1.0
+   },
+   "vs_current": {
+    "n": 5,
+    "only_a_wrong": 0,
+    "only_b_wrong": 1,
+    "both_wrong": 0,
+    "extra_errors": -1,
+    "mcnemar_p": 1.0
+   }
+  }
+ },
+ "reasons": [],
+ "current": "organik_gray_v2",
+ "shipped": [
+  "organik_gray_v2"
+ ],
+ "accepted": true,
+ "date": "2026-10-30T14:06:14+00:00"
+}

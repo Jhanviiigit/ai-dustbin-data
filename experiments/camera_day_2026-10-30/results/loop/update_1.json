@@ -1,0 +1,349 @@
+{
+ "time": "2026-10-30T18:36:43",
+ "new_rows": 34,
+ "skipped": {},
+ "plan": {
+  "by_split": {
+   "train": 17,
+   "test_audit": 9,
+   "val": 3,
+   "test_hard": 5
+  },
+  "audit_leaks": 0,
+  "near_copies": 0
+ },
+ "trigger": {
+  "go": true,
+  "reason": "17 new train groups (need 15), {'dry': 4, 'wet': 13}",
+  "new_train_groups": 17,
+  "per_class": {
+   "dry": 4,
+   "wet": 13
+  },
+  "needed": 15,
+  "days_since_update": 0.0
+ },
+ "committed": true,
+ "update": "update_1",
+ "augmented": 171,
+ "forced": false,
+ "rows": [
+  {
+   "crop_id": "20261030-183544-00002-1",
+   "split": "train",
+   "group_id": "20261030-183544-00002",
+   "label": "dry",
+   "trigger": "low_confidence",
+   "reason": "low_confidence",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183545-00012-1",
+   "split": "test_audit",
+   "group_id": "20261030-183545-00012",
+   "label": "dry",
+   "trigger": "audit",
+   "reason": "audit",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183546-00022-1",
+   "split": "test_audit",
+   "group_id": "20261030-183546-00022",
+   "label": "dry",
+   "trigger": "audit",
+   "reason": "audit",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183548-00032-1",
+   "split": "test_audit",
+   "group_id": "20261030-183548-00032",
+   "label": "dry",
+   "trigger": "audit",
+   "reason": "audit",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183548-00034-1",
+   "split": "train",
+   "group_id": "20261030-183548-00034",
+   "label": "dry",
+   "trigger": "low_confidence",
+   "reason": "low_confidence",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183548-00037-1",
+   "split": "train",
+   "group_id": "20261030-183548-00037",
+   "label": "dry",
+   "trigger": "low_confidence",
+   "reason": "low_confidence",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183549-00044-1",
+   "split": "test_audit",
+   "group_id": "20261030-183549-00044",
+   "label": "dry",
+   "trigger": "audit",
+   "reason": "audit",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183551-00055-1",
+   "split": "val",
+   "group_id": "20261030-183551-00055",
+   "label": "dry",
+   "trigger": "low_confidence",
+   "reason": "low_confidence, hash bucket < 15 of 100",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183551-00057-1",
+   "split": "val",
+   "group_id": "20261030-183551-00057",
+   "label": "dry",
+   "trigger": "low_confidence",
+   "reason": "low_confidence, hash bucket < 15 of 100",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183551-00058-1",
+   "split": "train",
+   "group_id": "20261030-183551-00058",
+   "label": "dry",
+   "trigger": "low_confidence",
+   "reason": "low_confidence",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183551-00059-1",
+   "split": "test_audit",
+   "group_id": "20261030-183551-00059",
+   "label": "dry",
+   "trigger": "audit",
+   "reason": "audit",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183551-00060-1",
+   "split": "test_hard",
+   "group_id": "20261030-183551-00060",
+   "label": "dry",
+   "trigger": "low_confidence",
+   "reason": "low_confidence, hash bucket 0 of 5",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183552-00067-1",
+   "split": "train",
+   "group_id": "20261030-183552-00067",
+   "label": "wet",
+   "trigger": "low_confidence",
+   "reason": "low_confidence",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183552-00068-1",
+   "split": "train",
+   "group_id": "20261030-183552-00068",
+   "label": "wet",
+   "trigger": "low_confidence",
+   "reason": "low_confidence",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183552-00069-1",
+   "split": "train",
+   "group_id": "20261030-183552-00069",
+   "label": "wet",
+   "trigger": "low_confidence",
+   "reason": "low_confidence",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183553-00072-1",
+   "split": "test_hard",
+   "group_id": "20261030-183553-00072",
+   "label": "wet",
+   "trigger": "low_confidence",
+   "reason": "low_confidence, hash bucket 0 of 5",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183553-00073-1",
+   "split": "test_hard",
+   "group_id": "20261030-183553-00073",
+   "label": "wet",
+   "trigger": "low_confidence",
+   "reason": "low_confidence, hash bucket 0 of 5",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183553-00075-1",
+   "split": "train",
+   "group_id": "20261030-183553-00075",
+   "label": "wet",
+   "trigger": "low_confidence",
+   "reason": "low_confidence",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183553-00076-1",
+   "split": "val",
+   "group_id": "20261030-183553-00076",
+   "label": "wet",
+   "trigger": "low_confidence",
+   "reason": "low_confidence, hash bucket < 15 of 100",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183553-00077-1",
+   "split": "train",
+   "group_id": "20261030-183553-00077",
+   "label": "wet",
+   "trigger": "low_confidence",
+   "reason": "low_confidence",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183553-00078-1",
+   "split": "test_hard",
+   "group_id": "20261030-183553-00078",
+   "label": "wet",
+   "trigger": "low_confidence",
+   "reason": "low_confidence, hash bucket 0 of 5",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183553-00079-1",
+   "split": "test_audit",
+   "group_id": "20261030-183553-00079",
+   "label": "wet",
+   "trigger": "audit",
+   "reason": "audit",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183554-00083-1",
+   "split": "test_hard",
+   "group_id": "20261030-183554-00083",
+   "label": "wet",
+   "trigger": "low_confidence",
+   "reason": "low_confidence, hash bucket 0 of 5",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183554-00090-1",
+   "split": "test_audit",
+   "group_id": "20261030-183554-00090",
+   "label": "wet",
+   "trigger": "audit",
+   "reason": "audit",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183555-00091-1",
+   "split": "train",
+   "group_id": "20261030-183555-00091",
+   "label": "wet",
+   "trigger": "low_confidence",
+   "reason": "low_confidence",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183555-00092-1",
+   "split": "train",
+   "group_id": "20261030-183555-00092",
+   "label": "wet",
+   "trigger": "low_confidence",
+   "reason": "low_confidence",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183555-00093-1",
+   "split": "train",
+   "group_id": "20261030-183555-00093",
+   "label": "wet",
+   "trigger": "low_confidence",
+   "reason": "low_confidence",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183555-00094-1",
+   "split": "train",
+   "group_id": "20261030-183555-00094",
+   "label": "wet",
+   "trigger": "low_confidence",
+   "reason": "low_confidence",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183555-00097-1",
+   "split": "train",
+   "group_id": "20261030-183555-00097",
+   "label": "wet",
+   "trigger": "low_confidence",
+   "reason": "low_confidence",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183555-00098-1",
+   "split": "train",
+   "group_id": "20261030-183555-00098",
+   "label": "wet",
+   "trigger": "low_confidence",
+   "reason": "low_confidence",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183556-00104-1",
+   "split": "train",
+   "group_id": "20261030-183556-00104",
+   "label": "wet",
+   "trigger": "low_confidence",
+   "reason": "low_confidence",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183556-00107-1",
+   "split": "test_audit",
+   "group_id": "20261030-183556-00107",
+   "label": "wet",
+   "trigger": "audit",
+   "reason": "audit",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183557-00115-1",
+   "split": "train",
+   "group_id": "20261030-183557-00115",
+   "label": "wet",
+   "trigger": "low_confidence",
+   "reason": "low_confidence",
+   "audit_leak": false
+  },
+  {
+   "crop_id": "20261030-183557-00118-1",
+   "split": "test_audit",
+   "group_id": "20261030-183557-00118",
+   "label": "wet",
+   "trigger": "audit",
+   "reason": "audit",
+   "audit_leak": false
+  }
+ ],
+ "run": {
+  "stage": "finished",
+  "current": "C:\\Users\\jhanv\\AppData\\Local\\Temp\\camday\\sys\\deploy\\current\\weights.pt",
+  "started": "2026-10-30T18:36:48",
+  "soft_labels": "C:\\Users\\jhanv\\AppData\\Local\\Temp\\camday\\sys\\runs\\teacher_v2\\soft_labels.csv",
+  "teacher_version": "teacher_v2",
+  "candidate": "C:\\Users\\jhanv\\AppData\\Local\\Temp\\camday\\sys\\runs\\student_u1\\weights.pt",
+  "accepted": true,
+  "status": "deployed",
+  "finished": "2026-10-30T19:36:15"
+ }
+}

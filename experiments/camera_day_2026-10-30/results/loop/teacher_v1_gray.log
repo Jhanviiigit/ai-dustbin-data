@@ -1,0 +1,8 @@
+Using cache found in C:\Users\jhanv/.cache\torch\hub\facebookresearch_dinov2_main
+Downloading: "https://dl.fbaipublicfiles.com/dinov2/dinov2_vitb14/dinov2_vitb14_pretrain.pth" to C:\Users\jhanv/.cache\torch\hub\checkpoints\dinov2_vitb14_pretrain.pth
+dataset_D_v2_balanced: matched 2716/2716 images to manifest.csv
+dataset_D_v2_balanced: 2716/2716 images have a mask (others used uncropped)
+teacher_v1_gray: C=0.3, T=0.964
+soft_labels.csv: 1902 rows written to C:\Users\jhanv\AppData\Local\Temp\camday\teacher\teacher_v1_gray\soft_labels.csv
+                 dataset            model    n       acc        acc_ci95       ece  cm [[dd,dw],[wd,ww]]               acc_realwaste                acc_roboflow
+0  dataset_D_v2_balanced  teacher_v1_gray  411  0.992701  [0.979, 0.998]  0.008688  [[206, 2], [1, 202]]  0.992 [0.972, 0.998] n=252  0.994 [0.965, 0.999] n=159
