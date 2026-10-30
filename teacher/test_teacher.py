@@ -146,8 +146,18 @@ class TestSoftLabelFormat(unittest.TestCase):
         self.assertEqual(tab["fold"].tolist(), [0, 1])
         self.assertEqual(tab["teacher_version"].tolist(), ["teacher_v2", "teacher_v2"])
 
+    def test_teacher_wet_prob_is_calibrated_by_temperature(self):
+        """teacher_wet_prob must equal sigmoid(teacher_logit / T), as Teacher.wet_prob() gives."""
+        df = _rows(3)
+        logits = np.array([-2.0, 0.5, 3.0])
+        tab = soft_label_table(df, logits, version="teacher_v1", folds=[0, 1, 2], temperature=2.0)
+        np.testing.assert_allclose(tab["teacher_wet_prob"].values, sigmoid(logits / 2.0), atol=1e-7)
+        np.testing.assert_allclose(tab["teacher_logit"].values, logits)
+        with self.assertRaises(ValueError):
+            soft_label_table(df, logits, version="teacher_v1", folds=[0, 1, 2], temperature=0.0)
+
     def test_teacher_wet_prob_equals_sigmoid_logit(self):
-        """teacher_wet_prob must equal sigmoid(teacher_logit)."""
+        """With T = 1 (the default), teacher_wet_prob equals sigmoid(teacher_logit)."""
         df = _rows(5)
         logits = np.array([-3.5, -1.0, 0.0, 1.2, 4.0])
         tab = soft_label_table(df, logits, version="teacher_v1", folds=[0, 1, 2, 3, 4])

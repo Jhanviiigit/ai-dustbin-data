@@ -14,7 +14,7 @@ Hand-off formats (team doc):
                    e.g. crops/<crop_id>.jpg; load_id, box, human_label, ...). Read through
                    student/common.py load_feedback(), so teacher and student use the same rows.
   5  soft labels : crop_id, teacher_logit, teacher_wet_prob, fold, teacher_version (runs/teacher_vN/soft_labels.csv)
-                   teacher_logit = raw wet log-odds; teacher_wet_prob = sigmoid(teacher_logit)
+                   teacher_logit = raw wet log-odds; teacher_wet_prob = sigmoid(teacher_logit / T)
   6  teacher     : teacher_vN.joblib = classifier, temperature, backbone, crop settings, ...
 
 Torch is imported lazily, so indexing / fitting / soft-label code also runs without a GPU.
@@ -477,15 +477,18 @@ def interim_crop_id(df) -> list:
             for d, s, c, f in zip(df["dataset"], df["split"], df["class_folder"], df["filename"])]
 
 
-def soft_label_table(df, logits, version, folds):
+def soft_label_table(df, logits, version, folds, temperature=1.0):
     """Format 5 rows for df (train rows only), given raw logits and folds in df order.
 
     Columns exactly, in order: crop_id, teacher_logit, teacher_wet_prob, fold, teacher_version.
-    teacher_logit = raw wet log-odds (2-output head: wet minus dry); teacher_wet_prob = sigmoid of it.
+    teacher_logit = raw wet log-odds (2-output head: wet minus dry); teacher_wet_prob = sigmoid(logit / temperature), the teacher's calibrated
+    probability (Teacher.wet_prob); pass the fitted teacher's T.
     folds = the folds returned by out_of_fold_logits(); required, never defaulted.
     """
     if not str(version).startswith("teacher_v"):
         raise ValueError(f"version must look like teacher_vN, got {version!r}")
+    if not temperature > 0:
+        raise ValueError(f"temperature must be positive, got {temperature!r}")
     raw = np.asarray(logits, dtype=float)
     logit = raw[:, 1] - raw[:, 0] if raw.ndim == 2 and raw.shape[1] == 2 else raw.ravel()
     folds = np.asarray(folds, dtype=int).ravel()
@@ -496,7 +499,7 @@ def soft_label_table(df, logits, version, folds):
     out = pd.DataFrame({
         "crop_id": interim_crop_id(df),
         "teacher_logit": logit,
-        "teacher_wet_prob": sigmoid(logit),
+        "teacher_wet_prob": sigmoid(logit / temperature),
         "fold": folds,
         "teacher_version": str(version),
     })
@@ -585,7 +588,7 @@ def run_update(datasets, out_dir, version, feedback_dir=None, n_aug=2, cache_dir
     print(f"{version}: C={t.C}, T={t.temperature:.3f}")
 
     z_oof, folds = out_of_fold_logits(X, y, g, v, t.C, return_folds=True)
-    soft_tab = soft_label_table(train, z_oof, version, folds=folds)
+    soft_tab = soft_label_table(train, z_oof, version, folds=folds, temperature=t.temperature)
 
     runs_dir = Path(out_dir) if out_dir else Path("runs")
     save_dir = runs_dir if runs_dir.name == version else (runs_dir / version)
