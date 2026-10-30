@@ -12,6 +12,7 @@ improve the model over time.
 | teacher | **Teacher model**: larger model, retrained from human feedback off the bin (not started) | Vibha |
 | [`data_prep/`](data_prep/) | Dataset cleaning, balancing, background removal, packaging | @Jhanviiigit |
 | [`reports/`](reports/) | Dataset reports per version | |
+| [`experiments/`](experiments/) | Runs on real bin-camera photos: method, results, scripts | |
 
 Nothing here comes from the original `ai_dustbin_2` code; only its images are reused.
 
@@ -103,7 +104,14 @@ public datasets below (Roboflow, RealWaste) are the teacher's. See
 
 ## Results so far
 
-All detector results are on **synthetic scenes**: real waste cutouts pasted onto fake
+**Real bin camera (2026-10-30)**, 113 photos of 58 items no model trained on
+([`experiments/camera_day_2026-10-30/`](experiments/camera_day_2026-10-30/)): student 81.4%,
+teacher 93.8%; after one loop round (34 human-labelled loads, gate accepted) the student
+reaches 91.2%. A student trained on the bin labels without the teacher reaches 92.0%; the
+teacher's soft labels halve how often a person is asked (19% → 9%). The detector's SEPARATE
+rule at 0.09 wrongly stops 27% of single items; 0.40 keeps it under 5%.
+
+The detector results below are on **synthetic scenes**: real waste cutouts pasted onto fake
 plates with lighting changes, noise and shadows. They will be re-run on photos from
 the bin camera.
 
@@ -130,7 +138,7 @@ More detail, including the item-count warning results, is in [`bin_vision/README
 
 **Student:** trained on the Organik gray crops only (`organik_gray_v2`, release
 `student-organik_gray_v2`). 5-fold cross-validation, grouped by image similarity: 96.75%
-(std 1.4), AUC 0.994. Nothing has run on real bin photos yet. Details and download commands:
+(std 1.4), AUC 0.994. On real bin photos: see the camera-day results above. Details and download commands:
 [`student/README.md`](student/README.md).
 
 ## Download the datasets

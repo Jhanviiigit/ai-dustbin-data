@@ -1,0 +1,242 @@
+file,original,item_id,label,pile,source,photos_of_item,crop,ref,blobs,edge_dropped,area_frac
+loop/dry waste/dry_002__nvcamtest_11588_s00_00002.jpg,dry/dry/nvcamtest_11588_s00_00002.jpg,dry_002,dry,loop,,2,loop/dry waste/dry_002__nvcamtest_11588_s00_00002.jpg,newbg.jpg,2,1,0.1166
+loop/dry waste/dry_002__nvcamtest_11588_s00_00003.jpg,dry/dry/nvcamtest_11588_s00_00003.jpg,dry_002,dry,loop,,2,loop/dry waste/dry_002__nvcamtest_11588_s00_00003.jpg,newbg.jpg,2,1,0.1279
+loop/dry waste/dry_003__nvcamtest_11588_s00_00004.jpg,dry/dry/nvcamtest_11588_s00_00004.jpg,dry_003,dry,loop,,2,loop/dry waste/dry_003__nvcamtest_11588_s00_00004.jpg,newbg2.jpg,2,1,0.1755
+loop/dry waste/dry_003__nvcamtest_11588_s00_00005.jpg,dry/dry/nvcamtest_11588_s00_00005.jpg,dry_003,dry,loop,,2,loop/dry waste/dry_003__nvcamtest_11588_s00_00005.jpg,newbg.jpg,2,1,0.1596
+loop/dry waste/dry_006__nvcamtest_9397_s00_00003.jpg,dry/dry/nvcamtest_9397_s00_00003.jpg,dry_006,dry,loop,,2,loop/dry waste/dry_006__nvcamtest_9397_s00_00003.jpg,backup bg.jpg,1,0,0.0254
+loop/dry waste/dry_006__nvcamtest_9397_s00_00004.jpg,dry/dry/nvcamtest_9397_s00_00004.jpg,dry_006,dry,loop,,2,loop/dry waste/dry_006__nvcamtest_9397_s00_00004.jpg,backup bg.jpg,1,0,0.0243
+loop/dry waste/dry_007__nvcamtest_9397_s00_00005.jpg,dry/dry/nvcamtest_9397_s00_00005.jpg,dry_007,dry,loop,,2,loop/dry waste/dry_007__nvcamtest_9397_s00_00005.jpg,backup bg.jpg,1,0,0.2992
+loop/dry waste/dry_007__nvcamtest_9397_s00_00006.jpg,dry/dry/nvcamtest_9397_s00_00006.jpg,dry_007,dry,loop,,2,loop/dry waste/dry_007__nvcamtest_9397_s00_00006.jpg,backup bg.jpg,2,1,0.2569
+loop/dry waste/dry_008__nvcamtest_9397_s00_00007.jpg,dry/dry/nvcamtest_9397_s00_00007.jpg,dry_008,dry,loop,,2,loop/dry waste/dry_008__nvcamtest_9397_s00_00007.jpg,backup bg.jpg,2,1,0.114
+loop/dry waste/dry_008__nvcamtest_9397_s00_00008.jpg,dry/dry/nvcamtest_9397_s00_00008.jpg,dry_008,dry,loop,,2,loop/dry waste/dry_008__nvcamtest_9397_s00_00008.jpg,backup bg.jpg,1,0,0.1125
+loop/dry waste/dry_009__nvcamtest_9397_s00_00009.jpg,dry/dry/nvcamtest_9397_s00_00009.jpg,dry_009,dry,loop,,2,loop/dry waste/dry_009__nvcamtest_9397_s00_00009.jpg,backup bg.jpg,3,0,0.0234
+loop/dry waste/dry_009__nvcamtest_9397_s00_00010.jpg,dry/dry/nvcamtest_9397_s00_00010.jpg,dry_009,dry,loop,,2,loop/dry waste/dry_009__nvcamtest_9397_s00_00010.jpg,backup bg.jpg,3,0,0.0371
+loop/dry waste/dry_013__nvcamtest_9397_s00_00017.jpg,dry/dry/nvcamtest_9397_s00_00017.jpg,dry_013,dry,loop,,2,loop/dry waste/dry_013__nvcamtest_9397_s00_00017.jpg,backup bg.jpg,2,1,0.0322
+loop/dry waste/dry_013__nvcamtest_9397_s00_00018.jpg,dry/dry/nvcamtest_9397_s00_00018.jpg,dry_013,dry,loop,,2,loop/dry waste/dry_013__nvcamtest_9397_s00_00018.jpg,backup bg.jpg,2,1,0.029
+loop/dry waste/dry_014__nvcamtest_9397_s00_00019.jpg,dry/dry/nvcamtest_9397_s00_00019.jpg,dry_014,dry,loop,,2,loop/dry waste/dry_014__nvcamtest_9397_s00_00019.jpg,backup bg.jpg,2,1,0.0254
+loop/dry waste/dry_014__nvcamtest_9397_s00_00020.jpg,dry/dry/nvcamtest_9397_s00_00020.jpg,dry_014,dry,loop,,2,loop/dry waste/dry_014__nvcamtest_9397_s00_00020.jpg,backup bg.jpg,2,1,0.027
+loop/dry waste/dry_015__nvcamtest_9397_s00_00021.jpg,dry/dry/nvcamtest_9397_s00_00021.jpg,dry_015,dry,loop,,2,loop/dry waste/dry_015__nvcamtest_9397_s00_00021.jpg,backup bg.jpg,2,1,0.0155
+loop/dry waste/dry_015__nvcamtest_9397_s00_00022.jpg,dry/dry/nvcamtest_9397_s00_00022.jpg,dry_015,dry,loop,,2,loop/dry waste/dry_015__nvcamtest_9397_s00_00022.jpg,backup bg.jpg,2,1,0.0196
+loop/dry waste/dry_016__nvcamtest_9397_s00_00023.jpg,dry/dry/nvcamtest_9397_s00_00023.jpg,dry_016,dry,loop,,2,loop/dry waste/dry_016__nvcamtest_9397_s00_00023.jpg,backup bg.jpg,2,1,0.3664
+loop/dry waste/dry_016__nvcamtest_9397_s00_00024.jpg,dry/dry/nvcamtest_9397_s00_00024.jpg,dry_016,dry,loop,,2,loop/dry waste/dry_016__nvcamtest_9397_s00_00024.jpg,backup bg.jpg,2,1,0.3096
+loop/dry waste/dry_018__nvcamtest_9397_s00_00027.jpg,dry/dry/nvcamtest_9397_s00_00027.jpg,dry_018,dry,loop,,2,loop/dry waste/dry_018__nvcamtest_9397_s00_00027.jpg,backup bg.jpg,2,1,0.0296
+loop/dry waste/dry_018__nvcamtest_9397_s00_00028.jpg,dry/dry/nvcamtest_9397_s00_00028.jpg,dry_018,dry,loop,,2,loop/dry waste/dry_018__nvcamtest_9397_s00_00028.jpg,backup bg.jpg,2,1,0.0265
+loop/dry waste/dry_019__nvcamtest_9397_s00_00029.jpg,dry/dry/nvcamtest_9397_s00_00029.jpg,dry_019,dry,loop,,2,loop/dry waste/dry_019__nvcamtest_9397_s00_00029.jpg,backup bg.jpg,2,1,0.1378
+loop/dry waste/dry_019__nvcamtest_9397_s00_00030.jpg,dry/dry/nvcamtest_9397_s00_00030.jpg,dry_019,dry,loop,,2,loop/dry waste/dry_019__nvcamtest_9397_s00_00030.jpg,backup bg.jpg,2,1,0.1247
+loop/dry waste/dry_027__nvcamtest_9397_s00_00045.jpg,dry/dry/nvcamtest_9397_s00_00045.jpg,dry_027,dry,loop,,2,loop/dry waste/dry_027__nvcamtest_9397_s00_00045.jpg,backup bg.jpg,2,1,0.3613
+loop/dry waste/dry_027__nvcamtest_9397_s00_00046.jpg,dry/dry/nvcamtest_9397_s00_00046.jpg,dry_027,dry,loop,,2,loop/dry waste/dry_027__nvcamtest_9397_s00_00046.jpg,backup bg.jpg,1,0,0.3475
+loop/dry waste/dry_028__nvcamtest_9397_s00_00047.jpg,dry/dry/nvcamtest_9397_s00_00047.jpg,dry_028,dry,loop,,2,loop/dry waste/dry_028__nvcamtest_9397_s00_00047.jpg,backup bg.jpg,2,1,0.0681
+loop/dry waste/dry_028__nvcamtest_9397_s00_00048.jpg,dry/dry/nvcamtest_9397_s00_00048.jpg,dry_028,dry,loop,,2,loop/dry waste/dry_028__nvcamtest_9397_s00_00048.jpg,backup bg.jpg,2,1,0.0679
+loop/dry waste/dry_029__nvcamtest_9397_s00_00049.jpg,dry/dry/nvcamtest_9397_s00_00049.jpg,dry_029,dry,loop,,3,loop/dry waste/dry_029__nvcamtest_9397_s00_00049.jpg,backup bg.jpg,2,1,0.1996
+loop/dry waste/dry_029__nvcamtest_9397_s00_00050.jpg,dry/dry/nvcamtest_9397_s00_00050.jpg,dry_029,dry,loop,,3,loop/dry waste/dry_029__nvcamtest_9397_s00_00050.jpg,backup bg.jpg,1,0,0.2315
+loop/dry waste/dry_029__nvcamtest_9397_s00_00051.jpg,dry/dry/nvcamtest_9397_s00_00051.jpg,dry_029,dry,loop,,3,loop/dry waste/dry_029__nvcamtest_9397_s00_00051.jpg,backup bg.jpg,2,1,0.194
+loop/dry waste/dry_033__nvcamtest_9397_s00_00058.jpg,dry/dry/nvcamtest_9397_s00_00058.jpg,dry_033,dry,loop,,2,loop/dry waste/dry_033__nvcamtest_9397_s00_00058.jpg,backup bg.jpg,2,1,0.0397
+loop/dry waste/dry_033__nvcamtest_9397_s00_00059.jpg,dry/dry/nvcamtest_9397_s00_00059.jpg,dry_033,dry,loop,,2,loop/dry waste/dry_033__nvcamtest_9397_s00_00059.jpg,backup bg.jpg,2,1,0.0394
+loop/dry waste/dry_034__nvcamtest_9397_s00_00060.jpg,dry/dry/nvcamtest_9397_s00_00060.jpg,dry_034,dry,loop,,2,loop/dry waste/dry_034__nvcamtest_9397_s00_00060.jpg,backup bg.jpg,2,1,0.0272
+loop/dry waste/dry_034__nvcamtest_9397_s00_00061.jpg,dry/dry/nvcamtest_9397_s00_00061.jpg,dry_034,dry,loop,,2,loop/dry waste/dry_034__nvcamtest_9397_s00_00061.jpg,backup bg.jpg,2,1,0.0231
+loop/dry waste/dry_036__nvcamtest_9397_s00_00064.jpg,dry/dry/nvcamtest_9397_s00_00064.jpg,dry_036,dry,loop,,2,loop/dry waste/dry_036__nvcamtest_9397_s00_00064.jpg,backup bg.jpg,2,1,0.0162
+loop/dry waste/dry_036__nvcamtest_9397_s00_00065.jpg,dry/dry/nvcamtest_9397_s00_00065.jpg,dry_036,dry,loop,,2,loop/dry waste/dry_036__nvcamtest_9397_s00_00065.jpg,backup bg.jpg,2,1,0.0173
+loop/dry waste/dry_038__nvcamtest_9397_s00_00068.jpg,dry/dry/nvcamtest_9397_s00_00068.jpg,dry_038,dry,loop,,2,loop/dry waste/dry_038__nvcamtest_9397_s00_00068.jpg,backup bg.jpg,2,1,0.0117
+loop/dry waste/dry_038__nvcamtest_9397_s00_00069.jpg,dry/dry/nvcamtest_9397_s00_00069.jpg,dry_038,dry,loop,,2,loop/dry waste/dry_038__nvcamtest_9397_s00_00069.jpg,backup bg.jpg,2,1,0.0089
+loop/dry waste/dry_039__nvcamtest_9397_s00_00070.jpg,dry/dry/nvcamtest_9397_s00_00070.jpg,dry_039,dry,loop,,2,loop/dry waste/dry_039__nvcamtest_9397_s00_00070.jpg,backup bg.jpg,2,1,0.0116
+loop/dry waste/dry_039__nvcamtest_9397_s00_00071.jpg,dry/dry/nvcamtest_9397_s00_00071.jpg,dry_039,dry,loop,,2,loop/dry waste/dry_039__nvcamtest_9397_s00_00071.jpg,backup bg.jpg,2,1,0.0114
+loop/dry waste/dry_041__nvcamtest_9397_s00_00074.jpg,dry/dry/nvcamtest_9397_s00_00074.jpg,dry_041,dry,loop,,2,loop/dry waste/dry_041__nvcamtest_9397_s00_00074.jpg,backup bg.jpg,2,1,0.0105
+loop/dry waste/dry_041__nvcamtest_9397_s00_00075.jpg,dry/dry/nvcamtest_9397_s00_00075.jpg,dry_041,dry,loop,,2,loop/dry waste/dry_041__nvcamtest_9397_s00_00075.jpg,backup bg.jpg,2,1,0.0101
+loop/dry waste/dry_042__nvcamtest_9397_s00_00076.jpg,dry/dry/nvcamtest_9397_s00_00076.jpg,dry_042,dry,loop,,2,,backup bg.jpg,1,1,
+loop/dry waste/dry_042__nvcamtest_9397_s00_00077.jpg,dry/dry/nvcamtest_9397_s00_00077.jpg,dry_042,dry,loop,,2,,backup bg.jpg,1,1,
+loop/dry waste/dry_043__nvcamtest_9397_s00_00078.jpg,dry/dry/nvcamtest_9397_s00_00078.jpg,dry_043,dry,loop,,3,loop/dry waste/dry_043__nvcamtest_9397_s00_00078.jpg,backup bg.jpg,2,1,0.0534
+loop/dry waste/dry_043__nvcamtest_9397_s00_00079.jpg,dry/dry/nvcamtest_9397_s00_00079.jpg,dry_043,dry,loop,,3,loop/dry waste/dry_043__nvcamtest_9397_s00_00079.jpg,backup bg.jpg,2,1,0.0514
+loop/dry waste/dry_043__nvcamtest_9397_s00_00080.jpg,dry/dry/nvcamtest_9397_s00_00080.jpg,dry_043,dry,loop,,3,loop/dry waste/dry_043__nvcamtest_9397_s00_00080.jpg,backup bg.jpg,2,1,0.0287
+loop/dry waste/dry_044__nvcamtest_9397_s00_00081.jpg,dry/dry/nvcamtest_9397_s00_00081.jpg,dry_044,dry,loop,,3,loop/dry waste/dry_044__nvcamtest_9397_s00_00081.jpg,backup bg.jpg,2,1,0.3597
+loop/dry waste/dry_044__nvcamtest_9397_s00_00082.jpg,dry/dry/nvcamtest_9397_s00_00082.jpg,dry_044,dry,loop,,3,loop/dry waste/dry_044__nvcamtest_9397_s00_00082.jpg,backup bg.jpg,2,1,0.313
+loop/dry waste/dry_044__nvcamtest_9397_s00_00083.jpg,dry/dry/nvcamtest_9397_s00_00083.jpg,dry_044,dry,loop,,3,loop/dry waste/dry_044__nvcamtest_9397_s00_00083.jpg,backup bg.jpg,2,1,0.4236
+loop/dry waste/dry_048__nvcamtest_9397_s00_00089.jpg,dry/dry/nvcamtest_9397_s00_00089.jpg,dry_048,dry,loop,,2,loop/dry waste/dry_048__nvcamtest_9397_s00_00089.jpg,backup bg.jpg,2,1,0.0699
+loop/dry waste/dry_048__nvcamtest_9397_s00_00090.jpg,dry/dry/nvcamtest_9397_s00_00090.jpg,dry_048,dry,loop,,2,loop/dry waste/dry_048__nvcamtest_9397_s00_00090.jpg,backup bg.jpg,2,1,0.0709
+loop/dry waste/dry_050__nvcamtest_9397_s00_00093.jpg,dry/dry/nvcamtest_9397_s00_00093.jpg,dry_050,dry,loop,,2,loop/dry waste/dry_050__nvcamtest_9397_s00_00093.jpg,backup bg.jpg,2,1,0.0989
+loop/dry waste/dry_050__nvcamtest_9397_s00_00094.jpg,dry/dry/nvcamtest_9397_s00_00094.jpg,dry_050,dry,loop,,2,loop/dry waste/dry_050__nvcamtest_9397_s00_00094.jpg,backup bg.jpg,2,1,0.0761
+loop/dry waste/dry_052__nvcamtest_9397_s00_00097.jpg,dry/dry/nvcamtest_9397_s00_00097.jpg,dry_052,dry,loop,,2,loop/dry waste/dry_052__nvcamtest_9397_s00_00097.jpg,backup bg.jpg,2,1,0.0625
+loop/dry waste/dry_052__nvcamtest_9397_s00_00098.jpg,dry/dry/nvcamtest_9397_s00_00098.jpg,dry_052,dry,loop,,2,loop/dry waste/dry_052__nvcamtest_9397_s00_00098.jpg,backup bg.jpg,2,1,0.0774
+loop/dry waste/dry_053__nvcamtest_9397_s00_00099.jpg,dry/dry/nvcamtest_9397_s00_00099.jpg,dry_053,dry,loop,,2,loop/dry waste/dry_053__nvcamtest_9397_s00_00099.jpg,backup bg.jpg,2,1,0.0525
+loop/dry waste/dry_053__nvcamtest_9397_s00_00100.jpg,dry/dry/nvcamtest_9397_s00_00100.jpg,dry_053,dry,loop,,2,loop/dry waste/dry_053__nvcamtest_9397_s00_00100.jpg,backup bg.jpg,2,1,0.0373
+loop/dry waste/dry_056__nvcamtest_9397_s00_00105.jpg,dry/dry/nvcamtest_9397_s00_00105.jpg,dry_056,dry,loop,,3,loop/dry waste/dry_056__nvcamtest_9397_s00_00105.jpg,backup bg.jpg,2,1,0.1946
+loop/dry waste/dry_056__nvcamtest_9397_s00_00106.jpg,dry/dry/nvcamtest_9397_s00_00106.jpg,dry_056,dry,loop,,3,loop/dry waste/dry_056__nvcamtest_9397_s00_00106.jpg,backup bg.jpg,2,1,0.1163
+loop/dry waste/dry_056__nvcamtest_9397_s00_00107.jpg,dry/dry/nvcamtest_9397_s00_00107.jpg,dry_056,dry,loop,,3,loop/dry waste/dry_056__nvcamtest_9397_s00_00107.jpg,backup bg.jpg,2,1,0.207
+loop/dry waste/dry_058__nvcamtest_9397_s00_00110.jpg,dry/dry/nvcamtest_9397_s00_00110.jpg,dry_058,dry,loop,,3,loop/dry waste/dry_058__nvcamtest_9397_s00_00110.jpg,backup bg.jpg,2,1,0.0547
+loop/dry waste/dry_058__nvcamtest_9397_s00_00111.jpg,dry/dry/nvcamtest_9397_s00_00111.jpg,dry_058,dry,loop,,3,loop/dry waste/dry_058__nvcamtest_9397_s00_00111.jpg,backup bg.jpg,2,1,0.0501
+loop/dry waste/dry_058__nvcamtest_9397_s00_00112.jpg,dry/dry/nvcamtest_9397_s00_00112.jpg,dry_058,dry,loop,,3,loop/dry waste/dry_058__nvcamtest_9397_s00_00112.jpg,backup bg.jpg,2,1,0.0291
+loop/dry waste/dry_059__nvcamtest_9397_s00_00113.jpg,dry/dry/nvcamtest_9397_s00_00113.jpg,dry_059,dry,loop,,2,loop/dry waste/dry_059__nvcamtest_9397_s00_00113.jpg,backup bg.jpg,2,1,0.0238
+loop/dry waste/dry_059__nvcamtest_9397_s00_00114.jpg,dry/dry/nvcamtest_9397_s00_00114.jpg,dry_059,dry,loop,,2,loop/dry waste/dry_059__nvcamtest_9397_s00_00114.jpg,backup bg.jpg,2,1,0.0133
+loop/wet waste/wet_002__nvcamtest_12953_s00_00000.jpg,wet/wet/nvcamtest_12953_s00_00000.jpg,wet_002,wet,loop,omelette,2,loop/wet waste/wet_002__nvcamtest_12953_s00_00000.jpg,backup bg.jpg,2,1,0.0141
+loop/wet waste/wet_002__nvcamtest_12953_s00_00001.jpg,wet/wet/nvcamtest_12953_s00_00001.jpg,wet_002,wet,loop,omelette,2,loop/wet waste/wet_002__nvcamtest_12953_s00_00001.jpg,backup bg.jpg,2,1,0.022
+loop/wet waste/wet_003__nvcamtest_12953_s00_00002.jpg,wet/wet/nvcamtest_12953_s00_00002.jpg,wet_003,wet,loop,omelette,2,loop/wet waste/wet_003__nvcamtest_12953_s00_00002.jpg,backup bg.jpg,2,1,0.0127
+loop/wet waste/wet_003__nvcamtest_12953_s00_00003.jpg,wet/wet/nvcamtest_12953_s00_00003.jpg,wet_003,wet,loop,omelette,2,loop/wet waste/wet_003__nvcamtest_12953_s00_00003.jpg,backup bg.jpg,2,1,0.0142
+loop/wet waste/wet_004__nvcamtest_12953_s00_00004.jpg,wet/wet/nvcamtest_12953_s00_00004.jpg,wet_004,wet,loop,omelette,2,loop/wet waste/wet_004__nvcamtest_12953_s00_00004.jpg,backup bg.jpg,2,1,0.0181
+loop/wet waste/wet_004__nvcamtest_12953_s00_00005.jpg,wet/wet/nvcamtest_12953_s00_00005.jpg,wet_004,wet,loop,omelette,2,loop/wet waste/wet_004__nvcamtest_12953_s00_00005.jpg,backup bg.jpg,2,1,0.019
+loop/wet waste/wet_005__nvcamtest_12953_s00_00006.jpg,wet/wet/nvcamtest_12953_s00_00006.jpg,wet_005,wet,loop,omelette,2,loop/wet waste/wet_005__nvcamtest_12953_s00_00006.jpg,backup bg.jpg,2,1,0.0245
+loop/wet waste/wet_005__nvcamtest_12953_s00_00007.jpg,wet/wet/nvcamtest_12953_s00_00007.jpg,wet_005,wet,loop,omelette,2,loop/wet waste/wet_005__nvcamtest_12953_s00_00007.jpg,backup bg.jpg,2,1,0.025
+loop/wet waste/wet_006__nvcamtest_7959_s00_00000.jpg,wet/wet/nvcamtest_7959_s00_00000.jpg,wet_006,wet,loop,chocolate,2,loop/wet waste/wet_006__nvcamtest_7959_s00_00000.jpg,backup bg.jpg,1,0,0.0151
+loop/wet waste/wet_006__nvcamtest_7959_s00_00001.jpg,wet/wet/nvcamtest_7959_s00_00001.jpg,wet_006,wet,loop,chocolate,2,loop/wet waste/wet_006__nvcamtest_7959_s00_00001.jpg,backup bg.jpg,1,0,0.014
+loop/wet waste/wet_007__nvcamtest_7959_s00_00002.jpg,wet/wet/nvcamtest_7959_s00_00002.jpg,wet_007,wet,loop,orange,2,loop/wet waste/wet_007__nvcamtest_7959_s00_00002.jpg,backup bg.jpg,1,0,0.0222
+loop/wet waste/wet_007__nvcamtest_7959_s00_00003.jpg,wet/wet/nvcamtest_7959_s00_00003.jpg,wet_007,wet,loop,orange,2,loop/wet waste/wet_007__nvcamtest_7959_s00_00003.jpg,backup bg.jpg,1,0,0.0238
+loop/wet waste/wet_010__nvcamtest_7959_s00_00008.jpg,wet/wet/nvcamtest_7959_s00_00008.jpg,wet_010,wet,loop,chocolate,2,loop/wet waste/wet_010__nvcamtest_7959_s00_00008.jpg,backup bg.jpg,1,0,0.0062
+loop/wet waste/wet_010__nvcamtest_7959_s00_00009.jpg,wet/wet/nvcamtest_7959_s00_00009.jpg,wet_010,wet,loop,chocolate,2,loop/wet waste/wet_010__nvcamtest_7959_s00_00009.jpg,backup bg.jpg,1,0,0.0051
+loop/wet waste/wet_011__nvcamtest_7959_s00_00010.jpg,wet/wet/nvcamtest_7959_s00_00010.jpg,wet_011,wet,loop,chocolate,2,loop/wet waste/wet_011__nvcamtest_7959_s00_00010.jpg,backup bg.jpg,1,0,0.0049
+loop/wet waste/wet_011__nvcamtest_7959_s00_00011.jpg,wet/wet/nvcamtest_7959_s00_00011.jpg,wet_011,wet,loop,chocolate,2,,backup bg.jpg,0,0,
+loop/wet waste/wet_012__nvcamtest_8037_s00_00000.jpg,wet/wet/nvcamtest_8037_s00_00000.jpg,wet_012,wet,loop,orange,2,loop/wet waste/wet_012__nvcamtest_8037_s00_00000.jpg,backup bg.jpg,2,1,0.0994
+loop/wet waste/wet_012__nvcamtest_8037_s00_00001.jpg,wet/wet/nvcamtest_8037_s00_00001.jpg,wet_012,wet,loop,orange,2,loop/wet waste/wet_012__nvcamtest_8037_s00_00001.jpg,newbg.jpg,1,0,0.1124
+loop/wet waste/wet_013__nvcamtest_8037_s00_00002.jpg,wet/wet/nvcamtest_8037_s00_00002.jpg,wet_013,wet,loop,orange,2,loop/wet waste/wet_013__nvcamtest_8037_s00_00002.jpg,newbg2.jpg,1,0,0.0133
+loop/wet waste/wet_013__nvcamtest_8037_s00_00003.jpg,wet/wet/nvcamtest_8037_s00_00003.jpg,wet_013,wet,loop,orange,2,loop/wet waste/wet_013__nvcamtest_8037_s00_00003.jpg,newbg2.jpg,1,0,0.0112
+loop/wet waste/wet_014__nvcamtest_8297_s00_00000.jpg,wet/wet/nvcamtest_8297_s00_00000.jpg,wet_014,wet,loop,,2,loop/wet waste/wet_014__nvcamtest_8297_s00_00000.jpg,backup bg.jpg,2,1,0.0503
+loop/wet waste/wet_014__nvcamtest_8297_s00_00001.jpg,wet/wet/nvcamtest_8297_s00_00001.jpg,wet_014,wet,loop,,2,loop/wet waste/wet_014__nvcamtest_8297_s00_00001.jpg,backup bg.jpg,2,1,0.052
+loop/wet waste/wet_016__nvcamtest_8297_s00_00004.jpg,wet/wet/nvcamtest_8297_s00_00004.jpg,wet_016,wet,loop,,2,loop/wet waste/wet_016__nvcamtest_8297_s00_00004.jpg,backup bg.jpg,2,1,0.0534
+loop/wet waste/wet_016__nvcamtest_8297_s00_00005.jpg,wet/wet/nvcamtest_8297_s00_00005.jpg,wet_016,wet,loop,,2,loop/wet waste/wet_016__nvcamtest_8297_s00_00005.jpg,backup bg.jpg,2,1,0.0473
+loop/wet waste/wet_019__nvcamtest_8297_s00_00010.jpg,wet/wet/nvcamtest_8297_s00_00010.jpg,wet_019,wet,loop,,2,loop/wet waste/wet_019__nvcamtest_8297_s00_00010.jpg,backup bg.jpg,2,1,0.0681
+loop/wet waste/wet_019__nvcamtest_8297_s00_00011.jpg,wet/wet/nvcamtest_8297_s00_00011.jpg,wet_019,wet,loop,,2,loop/wet waste/wet_019__nvcamtest_8297_s00_00011.jpg,backup bg.jpg,2,1,0.0681
+loop/wet waste/wet_020__nvcamtest_8297_s00_00012.jpg,wet/wet/nvcamtest_8297_s00_00012.jpg,wet_020,wet,loop,,3,loop/wet waste/wet_020__nvcamtest_8297_s00_00012.jpg,newbg.jpg,1,0,0.0621
+loop/wet waste/wet_020__nvcamtest_8297_s00_00013.jpg,wet/wet/nvcamtest_8297_s00_00013.jpg,wet_020,wet,loop,,3,loop/wet waste/wet_020__nvcamtest_8297_s00_00013.jpg,newbg.jpg,1,0,0.0552
+loop/wet waste/wet_020__nvcamtest_8297_s00_00014.jpg,wet/wet/nvcamtest_8297_s00_00014.jpg,wet_020,wet,loop,,3,loop/wet waste/wet_020__nvcamtest_8297_s00_00014.jpg,newbg.jpg,1,0,0.0563
+loop/wet waste/wet_022__nvcamtest_8297_s00_00017.jpg,wet/wet/nvcamtest_8297_s00_00017.jpg,wet_022,wet,loop,,3,loop/wet waste/wet_022__nvcamtest_8297_s00_00017.jpg,newbg.jpg,1,0,0.0521
+loop/wet waste/wet_022__nvcamtest_8297_s00_00018.jpg,wet/wet/nvcamtest_8297_s00_00018.jpg,wet_022,wet,loop,,3,loop/wet waste/wet_022__nvcamtest_8297_s00_00018.jpg,newbg.jpg,1,0,0.037
+loop/wet waste/wet_022__nvcamtest_8297_s00_00019.jpg,wet/wet/nvcamtest_8297_s00_00019.jpg,wet_022,wet,loop,,3,loop/wet waste/wet_022__nvcamtest_8297_s00_00019.jpg,backup bg.jpg,2,1,0.0477
+loop/wet waste/wet_026__nvcamtest_8297_s00_00026.jpg,wet/wet/nvcamtest_8297_s00_00026.jpg,wet_026,wet,loop,,2,loop/wet waste/wet_026__nvcamtest_8297_s00_00026.jpg,backup bg.jpg,2,1,0.0437
+loop/wet waste/wet_026__nvcamtest_8297_s00_00027.jpg,wet/wet/nvcamtest_8297_s00_00027.jpg,wet_026,wet,loop,,2,loop/wet waste/wet_026__nvcamtest_8297_s00_00027.jpg,newbg.jpg,2,1,0.0425
+loop/wet waste/wet_028__nvcamtest_8297_s00_00030.jpg,wet/wet/nvcamtest_8297_s00_00030.jpg,wet_028,wet,loop,,2,loop/wet waste/wet_028__nvcamtest_8297_s00_00030.jpg,backup bg.jpg,2,1,0.0057
+loop/wet waste/wet_028__nvcamtest_8297_s00_00031.jpg,wet/wet/nvcamtest_8297_s00_00031.jpg,wet_028,wet,loop,,2,loop/wet waste/wet_028__nvcamtest_8297_s00_00031.jpg,newbg3.jpg,2,1,0.0058
+loop/wet waste/wet_032__nvcamtest_8297_s00_00038.jpg,wet/wet/nvcamtest_8297_s00_00038.jpg,wet_032,wet,loop,,2,loop/wet waste/wet_032__nvcamtest_8297_s00_00038.jpg,newbg.jpg,2,1,0.078
+loop/wet waste/wet_032__nvcamtest_8297_s00_00039.jpg,wet/wet/nvcamtest_8297_s00_00039.jpg,wet_032,wet,loop,,2,loop/wet waste/wet_032__nvcamtest_8297_s00_00039.jpg,newbg.jpg,2,1,0.0749
+loop/wet waste/wet_037__nvcamtest_8297_s00_00048.jpg,wet/wet/nvcamtest_8297_s00_00048.jpg,wet_037,wet,loop,,2,loop/wet waste/wet_037__nvcamtest_8297_s00_00048.jpg,backup bg.jpg,2,1,0.032
+loop/wet waste/wet_037__nvcamtest_8297_s00_00049.jpg,wet/wet/nvcamtest_8297_s00_00049.jpg,wet_037,wet,loop,,2,loop/wet waste/wet_037__nvcamtest_8297_s00_00049.jpg,backup bg.jpg,2,1,0.0313
+loop/wet waste/wet_041__nvcamtest_8297_s00_00056.jpg,wet/wet/nvcamtest_8297_s00_00056.jpg,wet_041,wet,loop,,2,loop/wet waste/wet_041__nvcamtest_8297_s00_00056.jpg,backup bg.jpg,2,1,0.0603
+loop/wet waste/wet_041__nvcamtest_8297_s00_00057.jpg,wet/wet/nvcamtest_8297_s00_00057.jpg,wet_041,wet,loop,,2,loop/wet waste/wet_041__nvcamtest_8297_s00_00057.jpg,backup bg.jpg,2,1,0.0604
+loop/wet waste/wet_044__nvcamtest_8297_s00_00062.jpg,wet/wet/nvcamtest_8297_s00_00062.jpg,wet_044,wet,loop,,4,loop/wet waste/wet_044__nvcamtest_8297_s00_00062.jpg,backup bg.jpg,2,1,0.0775
+loop/wet waste/wet_044__nvcamtest_8297_s00_00063.jpg,wet/wet/nvcamtest_8297_s00_00063.jpg,wet_044,wet,loop,,4,loop/wet waste/wet_044__nvcamtest_8297_s00_00063.jpg,backup bg.jpg,2,1,0.0871
+loop/wet waste/wet_044__nvcamtest_8297_s00_00064.jpg,wet/wet/nvcamtest_8297_s00_00064.jpg,wet_044,wet,loop,,4,loop/wet waste/wet_044__nvcamtest_8297_s00_00064.jpg,backup bg.jpg,2,1,0.05
+loop/wet waste/wet_044__nvcamtest_8297_s00_00065.jpg,wet/wet/nvcamtest_8297_s00_00065.jpg,wet_044,wet,loop,,4,loop/wet waste/wet_044__nvcamtest_8297_s00_00065.jpg,backup bg.jpg,2,1,0.047
+loop/wet waste/wet_046__nvcamtest_8297_s00_00068.jpg,wet/wet/nvcamtest_8297_s00_00068.jpg,wet_046,wet,loop,cabbage,2,loop/wet waste/wet_046__nvcamtest_8297_s00_00068.jpg,backup bg.jpg,2,1,0.1901
+loop/wet waste/wet_046__nvcamtest_8297_s00_00069.jpg,wet/wet/nvcamtest_8297_s00_00069.jpg,wet_046,wet,loop,cabbage,2,loop/wet waste/wet_046__nvcamtest_8297_s00_00069.jpg,backup bg.jpg,2,1,0.1915
+loop/wet waste/wet_047__nvcamtest_8297_s00_00070.jpg,wet/wet/nvcamtest_8297_s00_00070.jpg,wet_047,wet,loop,cabbage,2,loop/wet waste/wet_047__nvcamtest_8297_s00_00070.jpg,backup bg.jpg,2,1,0.1204
+loop/wet waste/wet_047__nvcamtest_8297_s00_00071.jpg,wet/wet/nvcamtest_8297_s00_00071.jpg,wet_047,wet,loop,cabbage,2,loop/wet waste/wet_047__nvcamtest_8297_s00_00071.jpg,backup bg.jpg,2,1,0.1183
+loop/wet waste/wet_050__nvcamtest_8297_s00_00076.jpg,wet/wet/nvcamtest_8297_s00_00076.jpg,wet_050,wet,loop,,2,loop/wet waste/wet_050__nvcamtest_8297_s00_00076.jpg,backup bg.jpg,2,1,0.0128
+loop/wet waste/wet_050__nvcamtest_8297_s00_00077.jpg,wet/wet/nvcamtest_8297_s00_00077.jpg,wet_050,wet,loop,,2,loop/wet waste/wet_050__nvcamtest_8297_s00_00077.jpg,backup bg.jpg,2,1,0.01
+loop/wet waste/wet_053__nvcamtest_8297_s00_00082.jpg,wet/wet/nvcamtest_8297_s00_00082.jpg,wet_053,wet,loop,,2,loop/wet waste/wet_053__nvcamtest_8297_s00_00082.jpg,backup bg.jpg,2,1,0.0128
+loop/wet waste/wet_053__nvcamtest_8297_s00_00083.jpg,wet/wet/nvcamtest_8297_s00_00083.jpg,wet_053,wet,loop,,2,loop/wet waste/wet_053__nvcamtest_8297_s00_00083.jpg,backup bg.jpg,2,1,0.0139
+loop/wet waste/wet_055__nvcamtest_8844_s00_00000.jpg,wet/wet/nvcamtest_8844_s00_00000.jpg,wet_055,wet,loop,,3,loop/wet waste/wet_055__nvcamtest_8844_s00_00000.jpg,backup bg.jpg,1,0,0.0341
+loop/wet waste/wet_055__nvcamtest_8844_s00_00001.jpg,wet/wet/nvcamtest_8844_s00_00001.jpg,wet_055,wet,loop,,3,loop/wet waste/wet_055__nvcamtest_8844_s00_00001.jpg,backup bg.jpg,1,0,0.0341
+loop/wet waste/wet_055__nvcamtest_8844_s00_00002.jpg,wet/wet/nvcamtest_8844_s00_00002.jpg,wet_055,wet,loop,,3,loop/wet waste/wet_055__nvcamtest_8844_s00_00002.jpg,backup bg.jpg,1,0,0.0471
+test/dry waste/dry_001__nvcamtest_11588_s00_00000.jpg,dry/dry/nvcamtest_11588_s00_00000.jpg,dry_001,dry,test,,2,test/dry waste/dry_001__nvcamtest_11588_s00_00000.jpg,newbg2.jpg,2,1,0.4079
+test/dry waste/dry_001__nvcamtest_11588_s00_00001.jpg,dry/dry/nvcamtest_11588_s00_00001.jpg,dry_001,dry,test,,2,test/dry waste/dry_001__nvcamtest_11588_s00_00001.jpg,backup bg.jpg,1,0,0.2157
+test/dry waste/dry_004__nvcamtest_11588_s00_00006.jpg,dry/dry/nvcamtest_11588_s00_00006.jpg,dry_004,dry,test,,2,test/dry waste/dry_004__nvcamtest_11588_s00_00006.jpg,newbg.jpg,2,1,0.04
+test/dry waste/dry_004__nvcamtest_11588_s00_00007.jpg,dry/dry/nvcamtest_11588_s00_00007.jpg,dry_004,dry,test,,2,test/dry waste/dry_004__nvcamtest_11588_s00_00007.jpg,newbg.jpg,2,1,0.1884
+test/dry waste/dry_005__nvcamtest_9397_s00_00001.jpg,dry/dry/nvcamtest_9397_s00_00001.jpg,dry_005,dry,test,,2,test/dry waste/dry_005__nvcamtest_9397_s00_00001.jpg,backup bg.jpg,1,0,0.0687
+test/dry waste/dry_005__nvcamtest_9397_s00_00002.jpg,dry/dry/nvcamtest_9397_s00_00002.jpg,dry_005,dry,test,,2,test/dry waste/dry_005__nvcamtest_9397_s00_00002.jpg,backup bg.jpg,2,1,0.0564
+test/dry waste/dry_010__nvcamtest_9397_s00_00011.jpg,dry/dry/nvcamtest_9397_s00_00011.jpg,dry_010,dry,test,,2,test/dry waste/dry_010__nvcamtest_9397_s00_00011.jpg,backup bg.jpg,1,0,0.1309
+test/dry waste/dry_010__nvcamtest_9397_s00_00012.jpg,dry/dry/nvcamtest_9397_s00_00012.jpg,dry_010,dry,test,,2,test/dry waste/dry_010__nvcamtest_9397_s00_00012.jpg,backup bg.jpg,2,1,0.1385
+test/dry waste/dry_011__nvcamtest_9397_s00_00013.jpg,dry/dry/nvcamtest_9397_s00_00013.jpg,dry_011,dry,test,,2,test/dry waste/dry_011__nvcamtest_9397_s00_00013.jpg,backup bg.jpg,2,1,0.029
+test/dry waste/dry_011__nvcamtest_9397_s00_00014.jpg,dry/dry/nvcamtest_9397_s00_00014.jpg,dry_011,dry,test,,2,test/dry waste/dry_011__nvcamtest_9397_s00_00014.jpg,backup bg.jpg,2,1,0.0265
+test/dry waste/dry_012__nvcamtest_9397_s00_00015.jpg,dry/dry/nvcamtest_9397_s00_00015.jpg,dry_012,dry,test,,2,test/dry waste/dry_012__nvcamtest_9397_s00_00015.jpg,backup bg.jpg,2,1,0.2401
+test/dry waste/dry_012__nvcamtest_9397_s00_00016.jpg,dry/dry/nvcamtest_9397_s00_00016.jpg,dry_012,dry,test,,2,test/dry waste/dry_012__nvcamtest_9397_s00_00016.jpg,backup bg.jpg,2,1,0.2329
+test/dry waste/dry_017__nvcamtest_9397_s00_00025.jpg,dry/dry/nvcamtest_9397_s00_00025.jpg,dry_017,dry,test,,2,test/dry waste/dry_017__nvcamtest_9397_s00_00025.jpg,backup bg.jpg,2,1,0.3883
+test/dry waste/dry_017__nvcamtest_9397_s00_00026.jpg,dry/dry/nvcamtest_9397_s00_00026.jpg,dry_017,dry,test,,2,test/dry waste/dry_017__nvcamtest_9397_s00_00026.jpg,backup bg.jpg,2,0,0.3155
+test/dry waste/dry_020__nvcamtest_9397_s00_00031.jpg,dry/dry/nvcamtest_9397_s00_00031.jpg,dry_020,dry,test,,2,test/dry waste/dry_020__nvcamtest_9397_s00_00031.jpg,backup bg.jpg,2,1,0.006
+test/dry waste/dry_020__nvcamtest_9397_s00_00032.jpg,dry/dry/nvcamtest_9397_s00_00032.jpg,dry_020,dry,test,,2,test/dry waste/dry_020__nvcamtest_9397_s00_00032.jpg,backup bg.jpg,2,1,0.0045
+test/dry waste/dry_021__nvcamtest_9397_s00_00033.jpg,dry/dry/nvcamtest_9397_s00_00033.jpg,dry_021,dry,test,,2,test/dry waste/dry_021__nvcamtest_9397_s00_00033.jpg,backup bg.jpg,2,1,0.2994
+test/dry waste/dry_021__nvcamtest_9397_s00_00034.jpg,dry/dry/nvcamtest_9397_s00_00034.jpg,dry_021,dry,test,,2,test/dry waste/dry_021__nvcamtest_9397_s00_00034.jpg,backup bg.jpg,2,1,0.3549
+test/dry waste/dry_022__nvcamtest_9397_s00_00035.jpg,dry/dry/nvcamtest_9397_s00_00035.jpg,dry_022,dry,test,,2,test/dry waste/dry_022__nvcamtest_9397_s00_00035.jpg,backup bg.jpg,1,0,1.0
+test/dry waste/dry_022__nvcamtest_9397_s00_00036.jpg,dry/dry/nvcamtest_9397_s00_00036.jpg,dry_022,dry,test,,2,test/dry waste/dry_022__nvcamtest_9397_s00_00036.jpg,newbg2.jpg,1,0,1.0
+test/dry waste/dry_023__nvcamtest_9397_s00_00037.jpg,dry/dry/nvcamtest_9397_s00_00037.jpg,dry_023,dry,test,,2,test/dry waste/dry_023__nvcamtest_9397_s00_00037.jpg,backup bg.jpg,2,1,0.2778
+test/dry waste/dry_023__nvcamtest_9397_s00_00038.jpg,dry/dry/nvcamtest_9397_s00_00038.jpg,dry_023,dry,test,,2,test/dry waste/dry_023__nvcamtest_9397_s00_00038.jpg,backup bg.jpg,2,1,0.2842
+test/dry waste/dry_024__nvcamtest_9397_s00_00039.jpg,dry/dry/nvcamtest_9397_s00_00039.jpg,dry_024,dry,test,,2,test/dry waste/dry_024__nvcamtest_9397_s00_00039.jpg,backup bg.jpg,2,1,0.076
+test/dry waste/dry_024__nvcamtest_9397_s00_00040.jpg,dry/dry/nvcamtest_9397_s00_00040.jpg,dry_024,dry,test,,2,test/dry waste/dry_024__nvcamtest_9397_s00_00040.jpg,backup bg.jpg,2,1,0.077
+test/dry waste/dry_025__nvcamtest_9397_s00_00041.jpg,dry/dry/nvcamtest_9397_s00_00041.jpg,dry_025,dry,test,,2,test/dry waste/dry_025__nvcamtest_9397_s00_00041.jpg,backup bg.jpg,2,1,0.0975
+test/dry waste/dry_025__nvcamtest_9397_s00_00042.jpg,dry/dry/nvcamtest_9397_s00_00042.jpg,dry_025,dry,test,,2,test/dry waste/dry_025__nvcamtest_9397_s00_00042.jpg,backup bg.jpg,2,1,0.096
+test/dry waste/dry_026__nvcamtest_9397_s00_00043.jpg,dry/dry/nvcamtest_9397_s00_00043.jpg,dry_026,dry,test,,2,test/dry waste/dry_026__nvcamtest_9397_s00_00043.jpg,backup bg.jpg,2,1,0.117
+test/dry waste/dry_026__nvcamtest_9397_s00_00044.jpg,dry/dry/nvcamtest_9397_s00_00044.jpg,dry_026,dry,test,,2,test/dry waste/dry_026__nvcamtest_9397_s00_00044.jpg,backup bg.jpg,2,1,0.1317
+test/dry waste/dry_030__nvcamtest_9397_s00_00052.jpg,dry/dry/nvcamtest_9397_s00_00052.jpg,dry_030,dry,test,,2,test/dry waste/dry_030__nvcamtest_9397_s00_00052.jpg,backup bg.jpg,2,1,0.0193
+test/dry waste/dry_030__nvcamtest_9397_s00_00053.jpg,dry/dry/nvcamtest_9397_s00_00053.jpg,dry_030,dry,test,,2,test/dry waste/dry_030__nvcamtest_9397_s00_00053.jpg,backup bg.jpg,2,1,0.0306
+test/dry waste/dry_031__nvcamtest_9397_s00_00054.jpg,dry/dry/nvcamtest_9397_s00_00054.jpg,dry_031,dry,test,,2,test/dry waste/dry_031__nvcamtest_9397_s00_00054.jpg,backup bg.jpg,2,1,0.0301
+test/dry waste/dry_031__nvcamtest_9397_s00_00055.jpg,dry/dry/nvcamtest_9397_s00_00055.jpg,dry_031,dry,test,,2,test/dry waste/dry_031__nvcamtest_9397_s00_00055.jpg,backup bg.jpg,2,1,0.0305
+test/dry waste/dry_032__nvcamtest_9397_s00_00056.jpg,dry/dry/nvcamtest_9397_s00_00056.jpg,dry_032,dry,test,,2,test/dry waste/dry_032__nvcamtest_9397_s00_00056.jpg,backup bg.jpg,2,1,0.0472
+test/dry waste/dry_032__nvcamtest_9397_s00_00057.jpg,dry/dry/nvcamtest_9397_s00_00057.jpg,dry_032,dry,test,,2,test/dry waste/dry_032__nvcamtest_9397_s00_00057.jpg,backup bg.jpg,2,1,0.0491
+test/dry waste/dry_035__nvcamtest_9397_s00_00062.jpg,dry/dry/nvcamtest_9397_s00_00062.jpg,dry_035,dry,test,,2,test/dry waste/dry_035__nvcamtest_9397_s00_00062.jpg,backup bg.jpg,2,1,0.0053
+test/dry waste/dry_035__nvcamtest_9397_s00_00063.jpg,dry/dry/nvcamtest_9397_s00_00063.jpg,dry_035,dry,test,,2,test/dry waste/dry_035__nvcamtest_9397_s00_00063.jpg,backup bg.jpg,2,1,0.0055
+test/dry waste/dry_037__nvcamtest_9397_s00_00066.jpg,dry/dry/nvcamtest_9397_s00_00066.jpg,dry_037,dry,test,,2,test/dry waste/dry_037__nvcamtest_9397_s00_00066.jpg,backup bg.jpg,2,1,0.0261
+test/dry waste/dry_037__nvcamtest_9397_s00_00067.jpg,dry/dry/nvcamtest_9397_s00_00067.jpg,dry_037,dry,test,,2,test/dry waste/dry_037__nvcamtest_9397_s00_00067.jpg,backup bg.jpg,2,1,0.0278
+test/dry waste/dry_040__nvcamtest_9397_s00_00072.jpg,dry/dry/nvcamtest_9397_s00_00072.jpg,dry_040,dry,test,,2,test/dry waste/dry_040__nvcamtest_9397_s00_00072.jpg,backup bg.jpg,2,1,0.0105
+test/dry waste/dry_040__nvcamtest_9397_s00_00073.jpg,dry/dry/nvcamtest_9397_s00_00073.jpg,dry_040,dry,test,,2,test/dry waste/dry_040__nvcamtest_9397_s00_00073.jpg,backup bg.jpg,2,1,0.0108
+test/dry waste/dry_045__nvcamtest_9397_s00_00084.jpg,dry/dry/nvcamtest_9397_s00_00084.jpg,dry_045,dry,test,,1,test/dry waste/dry_045__nvcamtest_9397_s00_00084.jpg,backup bg.jpg,2,1,0.0349
+test/dry waste/dry_046__nvcamtest_9397_s00_00085.jpg,dry/dry/nvcamtest_9397_s00_00085.jpg,dry_046,dry,test,,2,test/dry waste/dry_046__nvcamtest_9397_s00_00085.jpg,backup bg.jpg,1,0,0.2299
+test/dry waste/dry_046__nvcamtest_9397_s00_00086.jpg,dry/dry/nvcamtest_9397_s00_00086.jpg,dry_046,dry,test,,2,test/dry waste/dry_046__nvcamtest_9397_s00_00086.jpg,backup bg.jpg,2,1,0.138
+test/dry waste/dry_047__nvcamtest_9397_s00_00087.jpg,dry/dry/nvcamtest_9397_s00_00087.jpg,dry_047,dry,test,,2,test/dry waste/dry_047__nvcamtest_9397_s00_00087.jpg,backup bg.jpg,2,1,0.0228
+test/dry waste/dry_047__nvcamtest_9397_s00_00088.jpg,dry/dry/nvcamtest_9397_s00_00088.jpg,dry_047,dry,test,,2,test/dry waste/dry_047__nvcamtest_9397_s00_00088.jpg,backup bg.jpg,2,1,0.0225
+test/dry waste/dry_049__nvcamtest_9397_s00_00091.jpg,dry/dry/nvcamtest_9397_s00_00091.jpg,dry_049,dry,test,,2,test/dry waste/dry_049__nvcamtest_9397_s00_00091.jpg,backup bg.jpg,2,1,0.0392
+test/dry waste/dry_049__nvcamtest_9397_s00_00092.jpg,dry/dry/nvcamtest_9397_s00_00092.jpg,dry_049,dry,test,,2,test/dry waste/dry_049__nvcamtest_9397_s00_00092.jpg,backup bg.jpg,2,1,0.0294
+test/dry waste/dry_051__nvcamtest_9397_s00_00095.jpg,dry/dry/nvcamtest_9397_s00_00095.jpg,dry_051,dry,test,,2,test/dry waste/dry_051__nvcamtest_9397_s00_00095.jpg,backup bg.jpg,2,1,0.0854
+test/dry waste/dry_051__nvcamtest_9397_s00_00096.jpg,dry/dry/nvcamtest_9397_s00_00096.jpg,dry_051,dry,test,,2,test/dry waste/dry_051__nvcamtest_9397_s00_00096.jpg,backup bg.jpg,2,1,0.0692
+test/dry waste/dry_054__nvcamtest_9397_s00_00101.jpg,dry/dry/nvcamtest_9397_s00_00101.jpg,dry_054,dry,test,,2,test/dry waste/dry_054__nvcamtest_9397_s00_00101.jpg,backup bg.jpg,2,1,0.0531
+test/dry waste/dry_054__nvcamtest_9397_s00_00102.jpg,dry/dry/nvcamtest_9397_s00_00102.jpg,dry_054,dry,test,,2,test/dry waste/dry_054__nvcamtest_9397_s00_00102.jpg,backup bg.jpg,2,1,0.0607
+test/dry waste/dry_055__nvcamtest_9397_s00_00103.jpg,dry/dry/nvcamtest_9397_s00_00103.jpg,dry_055,dry,test,,2,test/dry waste/dry_055__nvcamtest_9397_s00_00103.jpg,backup bg.jpg,2,1,0.1486
+test/dry waste/dry_055__nvcamtest_9397_s00_00104.jpg,dry/dry/nvcamtest_9397_s00_00104.jpg,dry_055,dry,test,,2,test/dry waste/dry_055__nvcamtest_9397_s00_00104.jpg,backup bg.jpg,2,1,0.1581
+test/dry waste/dry_057__nvcamtest_9397_s00_00108.jpg,dry/dry/nvcamtest_9397_s00_00108.jpg,dry_057,dry,test,,2,test/dry waste/dry_057__nvcamtest_9397_s00_00108.jpg,backup bg.jpg,2,1,0.2423
+test/dry waste/dry_057__nvcamtest_9397_s00_00109.jpg,dry/dry/nvcamtest_9397_s00_00109.jpg,dry_057,dry,test,,2,test/dry waste/dry_057__nvcamtest_9397_s00_00109.jpg,backup bg.jpg,2,1,0.2193
+test/dry waste/dry_060__nvcamtest_9397_s00_00115.jpg,dry/dry/nvcamtest_9397_s00_00115.jpg,dry_060,dry,test,,2,test/dry waste/dry_060__nvcamtest_9397_s00_00115.jpg,backup bg.jpg,2,1,0.0347
+test/dry waste/dry_060__nvcamtest_9397_s00_00116.jpg,dry/dry/nvcamtest_9397_s00_00116.jpg,dry_060,dry,test,,2,test/dry waste/dry_060__nvcamtest_9397_s00_00116.jpg,newbg2.jpg,2,1,0.0376
+test/dry waste/dry_061__nvcamtest_9397_s00_00117.jpg,dry/dry/nvcamtest_9397_s00_00117.jpg,dry_061,dry,test,,2,test/dry waste/dry_061__nvcamtest_9397_s00_00117.jpg,newbg2.jpg,2,1,0.0567
+test/dry waste/dry_061__nvcamtest_9397_s00_00118.jpg,dry/dry/nvcamtest_9397_s00_00118.jpg,dry_061,dry,test,,2,test/dry waste/dry_061__nvcamtest_9397_s00_00118.jpg,newbg2.jpg,2,1,0.0575
+test/wet waste/wet_001__biskut.jpg,wet/wet/biskut.jpg,wet_001,wet,test,,1,,backup bg.jpg,1,1,
+test/wet waste/wet_008__nvcamtest_7959_s00_00004.jpg,wet/wet/nvcamtest_7959_s00_00004.jpg,wet_008,wet,test,,2,test/wet waste/wet_008__nvcamtest_7959_s00_00004.jpg,backup bg.jpg,1,0,0.0412
+test/wet waste/wet_008__nvcamtest_7959_s00_00005.jpg,wet/wet/nvcamtest_7959_s00_00005.jpg,wet_008,wet,test,,2,test/wet waste/wet_008__nvcamtest_7959_s00_00005.jpg,backup bg.jpg,1,0,0.0405
+test/wet waste/wet_009__nvcamtest_7959_s00_00006.jpg,wet/wet/nvcamtest_7959_s00_00006.jpg,wet_009,wet,test,,2,test/wet waste/wet_009__nvcamtest_7959_s00_00006.jpg,backup bg.jpg,1,0,0.0083
+test/wet waste/wet_009__nvcamtest_7959_s00_00007.jpg,wet/wet/nvcamtest_7959_s00_00007.jpg,wet_009,wet,test,,2,test/wet waste/wet_009__nvcamtest_7959_s00_00007.jpg,backup bg.jpg,1,0,0.0108
+test/wet waste/wet_015__nvcamtest_8297_s00_00002.jpg,wet/wet/nvcamtest_8297_s00_00002.jpg,wet_015,wet,test,,2,test/wet waste/wet_015__nvcamtest_8297_s00_00002.jpg,backup bg.jpg,2,1,0.123
+test/wet waste/wet_015__nvcamtest_8297_s00_00003.jpg,wet/wet/nvcamtest_8297_s00_00003.jpg,wet_015,wet,test,,2,test/wet waste/wet_015__nvcamtest_8297_s00_00003.jpg,backup bg.jpg,2,1,0.1337
+test/wet waste/wet_017__nvcamtest_8297_s00_00006.jpg,wet/wet/nvcamtest_8297_s00_00006.jpg,wet_017,wet,test,,2,test/wet waste/wet_017__nvcamtest_8297_s00_00006.jpg,newbg.jpg,1,0,0.0184
+test/wet waste/wet_017__nvcamtest_8297_s00_00007.jpg,wet/wet/nvcamtest_8297_s00_00007.jpg,wet_017,wet,test,,2,test/wet waste/wet_017__nvcamtest_8297_s00_00007.jpg,backup bg.jpg,2,1,0.0161
+test/wet waste/wet_018__nvcamtest_8297_s00_00008.jpg,wet/wet/nvcamtest_8297_s00_00008.jpg,wet_018,wet,test,,2,test/wet waste/wet_018__nvcamtest_8297_s00_00008.jpg,backup bg.jpg,2,1,0.065
+test/wet waste/wet_018__nvcamtest_8297_s00_00009.jpg,wet/wet/nvcamtest_8297_s00_00009.jpg,wet_018,wet,test,,2,test/wet waste/wet_018__nvcamtest_8297_s00_00009.jpg,newbg.jpg,1,0,0.0628
+test/wet waste/wet_021__nvcamtest_8297_s00_00015.jpg,wet/wet/nvcamtest_8297_s00_00015.jpg,wet_021,wet,test,,2,test/wet waste/wet_021__nvcamtest_8297_s00_00015.jpg,newbg.jpg,1,0,0.0235
+test/wet waste/wet_021__nvcamtest_8297_s00_00016.jpg,wet/wet/nvcamtest_8297_s00_00016.jpg,wet_021,wet,test,,2,test/wet waste/wet_021__nvcamtest_8297_s00_00016.jpg,newbg.jpg,1,0,0.0184
+test/wet waste/wet_023__nvcamtest_8297_s00_00020.jpg,wet/wet/nvcamtest_8297_s00_00020.jpg,wet_023,wet,test,,2,test/wet waste/wet_023__nvcamtest_8297_s00_00020.jpg,newbg.jpg,1,0,0.0202
+test/wet waste/wet_023__nvcamtest_8297_s00_00021.jpg,wet/wet/nvcamtest_8297_s00_00021.jpg,wet_023,wet,test,,2,test/wet waste/wet_023__nvcamtest_8297_s00_00021.jpg,backup bg.jpg,2,1,0.0203
+test/wet waste/wet_024__nvcamtest_8297_s00_00022.jpg,wet/wet/nvcamtest_8297_s00_00022.jpg,wet_024,wet,test,,2,test/wet waste/wet_024__nvcamtest_8297_s00_00022.jpg,newbg.jpg,1,0,0.0113
+test/wet waste/wet_024__nvcamtest_8297_s00_00023.jpg,wet/wet/nvcamtest_8297_s00_00023.jpg,wet_024,wet,test,,2,test/wet waste/wet_024__nvcamtest_8297_s00_00023.jpg,backup bg.jpg,2,1,0.0119
+test/wet waste/wet_025__nvcamtest_8297_s00_00024.jpg,wet/wet/nvcamtest_8297_s00_00024.jpg,wet_025,wet,test,,2,test/wet waste/wet_025__nvcamtest_8297_s00_00024.jpg,backup bg.jpg,2,1,0.0591
+test/wet waste/wet_025__nvcamtest_8297_s00_00025.jpg,wet/wet/nvcamtest_8297_s00_00025.jpg,wet_025,wet,test,,2,test/wet waste/wet_025__nvcamtest_8297_s00_00025.jpg,newbg.jpg,2,1,0.0298
+test/wet waste/wet_027__nvcamtest_8297_s00_00028.jpg,wet/wet/nvcamtest_8297_s00_00028.jpg,wet_027,wet,test,,2,test/wet waste/wet_027__nvcamtest_8297_s00_00028.jpg,backup bg.jpg,2,1,0.0095
+test/wet waste/wet_027__nvcamtest_8297_s00_00029.jpg,wet/wet/nvcamtest_8297_s00_00029.jpg,wet_027,wet,test,,2,test/wet waste/wet_027__nvcamtest_8297_s00_00029.jpg,newbg.jpg,2,1,0.0121
+test/wet waste/wet_029__nvcamtest_8297_s00_00032.jpg,wet/wet/nvcamtest_8297_s00_00032.jpg,wet_029,wet,test,,2,test/wet waste/wet_029__nvcamtest_8297_s00_00032.jpg,newbg2.jpg,2,1,0.0343
+test/wet waste/wet_029__nvcamtest_8297_s00_00033.jpg,wet/wet/nvcamtest_8297_s00_00033.jpg,wet_029,wet,test,,2,test/wet waste/wet_029__nvcamtest_8297_s00_00033.jpg,newbg2.jpg,2,1,0.0344
+test/wet waste/wet_030__nvcamtest_8297_s00_00034.jpg,wet/wet/nvcamtest_8297_s00_00034.jpg,wet_030,wet,test,,2,test/wet waste/wet_030__nvcamtest_8297_s00_00034.jpg,newbg2.jpg,2,1,0.0422
+test/wet waste/wet_030__nvcamtest_8297_s00_00035.jpg,wet/wet/nvcamtest_8297_s00_00035.jpg,wet_030,wet,test,,2,test/wet waste/wet_030__nvcamtest_8297_s00_00035.jpg,newbg2.jpg,2,1,0.0451
+test/wet waste/wet_031__nvcamtest_8297_s00_00036.jpg,wet/wet/nvcamtest_8297_s00_00036.jpg,wet_031,wet,test,,2,test/wet waste/wet_031__nvcamtest_8297_s00_00036.jpg,backup bg.jpg,2,1,0.0995
+test/wet waste/wet_031__nvcamtest_8297_s00_00037.jpg,wet/wet/nvcamtest_8297_s00_00037.jpg,wet_031,wet,test,,2,test/wet waste/wet_031__nvcamtest_8297_s00_00037.jpg,newbg.jpg,2,1,0.0962
+test/wet waste/wet_033__nvcamtest_8297_s00_00040.jpg,wet/wet/nvcamtest_8297_s00_00040.jpg,wet_033,wet,test,,2,test/wet waste/wet_033__nvcamtest_8297_s00_00040.jpg,backup bg.jpg,2,1,0.0232
+test/wet waste/wet_033__nvcamtest_8297_s00_00041.jpg,wet/wet/nvcamtest_8297_s00_00041.jpg,wet_033,wet,test,,2,test/wet waste/wet_033__nvcamtest_8297_s00_00041.jpg,newbg.jpg,2,1,0.0224
+test/wet waste/wet_034__nvcamtest_8297_s00_00042.jpg,wet/wet/nvcamtest_8297_s00_00042.jpg,wet_034,wet,test,,2,test/wet waste/wet_034__nvcamtest_8297_s00_00042.jpg,backup bg.jpg,2,1,0.017
+test/wet waste/wet_034__nvcamtest_8297_s00_00043.jpg,wet/wet/nvcamtest_8297_s00_00043.jpg,wet_034,wet,test,,2,test/wet waste/wet_034__nvcamtest_8297_s00_00043.jpg,backup bg.jpg,2,1,0.0204
+test/wet waste/wet_035__nvcamtest_8297_s00_00044.jpg,wet/wet/nvcamtest_8297_s00_00044.jpg,wet_035,wet,test,,2,test/wet waste/wet_035__nvcamtest_8297_s00_00044.jpg,backup bg.jpg,2,1,0.0543
+test/wet waste/wet_035__nvcamtest_8297_s00_00045.jpg,wet/wet/nvcamtest_8297_s00_00045.jpg,wet_035,wet,test,,2,test/wet waste/wet_035__nvcamtest_8297_s00_00045.jpg,backup bg.jpg,3,1,0.0774
+test/wet waste/wet_036__nvcamtest_8297_s00_00046.jpg,wet/wet/nvcamtest_8297_s00_00046.jpg,wet_036,wet,test,,2,,backup bg.jpg,1,1,
+test/wet waste/wet_036__nvcamtest_8297_s00_00047.jpg,wet/wet/nvcamtest_8297_s00_00047.jpg,wet_036,wet,test,,2,,backup bg.jpg,1,1,
+test/wet waste/wet_038__nvcamtest_8297_s00_00050.jpg,wet/wet/nvcamtest_8297_s00_00050.jpg,wet_038,wet,test,,2,test/wet waste/wet_038__nvcamtest_8297_s00_00050.jpg,newbg.jpg,2,1,0.0362
+test/wet waste/wet_038__nvcamtest_8297_s00_00051.jpg,wet/wet/nvcamtest_8297_s00_00051.jpg,wet_038,wet,test,,2,test/wet waste/wet_038__nvcamtest_8297_s00_00051.jpg,backup bg.jpg,2,1,0.0283
+test/wet waste/wet_039__nvcamtest_8297_s00_00052.jpg,wet/wet/nvcamtest_8297_s00_00052.jpg,wet_039,wet,test,,2,test/wet waste/wet_039__nvcamtest_8297_s00_00052.jpg,backup bg.jpg,2,1,0.0141
+test/wet waste/wet_039__nvcamtest_8297_s00_00053.jpg,wet/wet/nvcamtest_8297_s00_00053.jpg,wet_039,wet,test,,2,test/wet waste/wet_039__nvcamtest_8297_s00_00053.jpg,backup bg.jpg,2,1,0.013
+test/wet waste/wet_040__nvcamtest_8297_s00_00054.jpg,wet/wet/nvcamtest_8297_s00_00054.jpg,wet_040,wet,test,,2,test/wet waste/wet_040__nvcamtest_8297_s00_00054.jpg,backup bg.jpg,2,1,0.045
+test/wet waste/wet_040__nvcamtest_8297_s00_00055.jpg,wet/wet/nvcamtest_8297_s00_00055.jpg,wet_040,wet,test,,2,test/wet waste/wet_040__nvcamtest_8297_s00_00055.jpg,backup bg.jpg,2,1,0.0436
+test/wet waste/wet_042__nvcamtest_8297_s00_00058.jpg,wet/wet/nvcamtest_8297_s00_00058.jpg,wet_042,wet,test,,2,test/wet waste/wet_042__nvcamtest_8297_s00_00058.jpg,backup bg.jpg,2,1,0.0042
+test/wet waste/wet_042__nvcamtest_8297_s00_00059.jpg,wet/wet/nvcamtest_8297_s00_00059.jpg,wet_042,wet,test,,2,,backup bg.jpg,1,1,
+test/wet waste/wet_043__nvcamtest_8297_s00_00060.jpg,wet/wet/nvcamtest_8297_s00_00060.jpg,wet_043,wet,test,,2,test/wet waste/wet_043__nvcamtest_8297_s00_00060.jpg,backup bg.jpg,2,1,0.0093
+test/wet waste/wet_043__nvcamtest_8297_s00_00061.jpg,wet/wet/nvcamtest_8297_s00_00061.jpg,wet_043,wet,test,,2,test/wet waste/wet_043__nvcamtest_8297_s00_00061.jpg,backup bg.jpg,2,1,0.0087
+test/wet waste/wet_045__nvcamtest_8297_s00_00066.jpg,wet/wet/nvcamtest_8297_s00_00066.jpg,wet_045,wet,test,,2,test/wet waste/wet_045__nvcamtest_8297_s00_00066.jpg,newbg.jpg,2,1,0.0566
+test/wet waste/wet_045__nvcamtest_8297_s00_00067.jpg,wet/wet/nvcamtest_8297_s00_00067.jpg,wet_045,wet,test,,2,test/wet waste/wet_045__nvcamtest_8297_s00_00067.jpg,backup bg.jpg,2,1,0.0577
+test/wet waste/wet_048__nvcamtest_8297_s00_00072.jpg,wet/wet/nvcamtest_8297_s00_00072.jpg,wet_048,wet,test,,2,test/wet waste/wet_048__nvcamtest_8297_s00_00072.jpg,backup bg.jpg,2,1,0.0358
+test/wet waste/wet_048__nvcamtest_8297_s00_00073.jpg,wet/wet/nvcamtest_8297_s00_00073.jpg,wet_048,wet,test,,2,test/wet waste/wet_048__nvcamtest_8297_s00_00073.jpg,backup bg.jpg,2,1,0.0345
+test/wet waste/wet_049__nvcamtest_8297_s00_00074.jpg,wet/wet/nvcamtest_8297_s00_00074.jpg,wet_049,wet,test,,2,test/wet waste/wet_049__nvcamtest_8297_s00_00074.jpg,newbg2.jpg,3,1,0.02
+test/wet waste/wet_049__nvcamtest_8297_s00_00075.jpg,wet/wet/nvcamtest_8297_s00_00075.jpg,wet_049,wet,test,,2,test/wet waste/wet_049__nvcamtest_8297_s00_00075.jpg,backup bg.jpg,4,1,0.0201
+test/wet waste/wet_051__nvcamtest_8297_s00_00078.jpg,wet/wet/nvcamtest_8297_s00_00078.jpg,wet_051,wet,test,,2,test/wet waste/wet_051__nvcamtest_8297_s00_00078.jpg,backup bg.jpg,2,1,0.0097
+test/wet waste/wet_051__nvcamtest_8297_s00_00079.jpg,wet/wet/nvcamtest_8297_s00_00079.jpg,wet_051,wet,test,,2,test/wet waste/wet_051__nvcamtest_8297_s00_00079.jpg,backup bg.jpg,2,1,0.009
+test/wet waste/wet_052__nvcamtest_8297_s00_00080.jpg,wet/wet/nvcamtest_8297_s00_00080.jpg,wet_052,wet,test,,2,test/wet waste/wet_052__nvcamtest_8297_s00_00080.jpg,backup bg.jpg,2,1,0.0072
+test/wet waste/wet_052__nvcamtest_8297_s00_00081.jpg,wet/wet/nvcamtest_8297_s00_00081.jpg,wet_052,wet,test,,2,test/wet waste/wet_052__nvcamtest_8297_s00_00081.jpg,backup bg.jpg,2,1,0.0072
+test/wet waste/wet_054__nvcamtest_8297_s00_00084.jpg,wet/wet/nvcamtest_8297_s00_00084.jpg,wet_054,wet,test,,1,test/wet waste/wet_054__nvcamtest_8297_s00_00084.jpg,backup bg.jpg,2,1,0.0054
+test/wet waste/wet_056__nvcamtest_8844_s00_00003.jpg,wet/wet/nvcamtest_8844_s00_00003.jpg,wet_056,wet,test,,2,test/wet waste/wet_056__nvcamtest_8844_s00_00003.jpg,backup bg.jpg,1,0,0.0169
+test/wet waste/wet_056__nvcamtest_8844_s00_00004.jpg,wet/wet/nvcamtest_8844_s00_00004.jpg,wet_056,wet,test,,2,test/wet waste/wet_056__nvcamtest_8844_s00_00004.jpg,backup bg.jpg,1,0,0.0218

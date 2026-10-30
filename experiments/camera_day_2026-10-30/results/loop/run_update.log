@@ -1,0 +1,49 @@
+carrying on with update_1 (stage: ingested)
+
+$ C:\Python313\python.exe C:\Users\jhanv\AppData\Local\Claude-Data\claude_pzs8sxrjxfjjc\scratch-workspaces\e2729752-c8f3-480d-b2b7-a6a0ef22126e\b97f613d-9dbb-45c7-aba5-72e296e605d4\scratch-2026-10-24-217bd3\ai-dustbin-data\student\update_student.py --current C:\Users\jhanv\AppData\Local\Temp\camday\sys\deploy\current\weights.pt --version student_u1 --pool C:\Users\jhanv\AppData\Local\Temp\camday\sys\pool --soft_labels C:\Users\jhanv\AppData\Local\Temp\camday\sys\runs\teacher_v2\soft_labels.csv --out C:\Users\jhanv\AppData\Local\Temp\camday\sys\runs\student_u1 --force
+
+$ C:\Python313\python.exe C:\Users\jhanv\AppData\Local\Claude-Data\claude_pzs8sxrjxfjjc\scratch-workspaces\e2729752-c8f3-480d-b2b7-a6a0ef22126e\b97f613d-9dbb-45c7-aba5-72e296e605d4\scratch-2026-10-24-217bd3\ai-dustbin-data\student\train.py --pool C:\Users\jhanv\AppData\Local\Temp\camday\sys\pool --init_weights C:\Users\jhanv\AppData\Local\Temp\camday\sys\deploy\current\weights.pt --version student_u1 --out C:\Users\jhanv\AppData\Local\Temp\camday\sys\runs\student_u1 --epochs 10 --lr 3e-05 --batch_size 32 --seed 42 --distill_alpha 0.5 --soft_labels C:\Users\jhanv\AppData\Local\Temp\camday\sys\runs\teacher_v2\soft_labels.csv
+pool (student_u1): C:\Users\jhanv\AppData\Local\Temp\camday\sys\pool  train=690 {'public': 502, 'feedback': 17, 'augmented': 171} val=75  size 224  crops: already the detector's
+train counts {'dry waste': 345, 'wet waste': 345} class weights [1.0, 1.0]
+soft labels: 690 of 690 train images matched (teacher ['teacher_v2'])
+starting from C:\Users\jhanv\AppData\Local\Temp\camday\sys\deploy\current\weights.pt (organik_gray_v2)
+device: cpu
+epoch  1  train loss 0.3263  val loss 0.1051  val acc 0.9467
+epoch  2  train loss 0.1919  val loss 0.0663  val acc 0.9467
+epoch  3  train loss 0.1746  val loss 0.0544  val acc 0.9733
+epoch  4  train loss 0.1548  val loss 0.0489  val acc 0.9867
+epoch  5  train loss 0.1566  val loss 0.0466  val acc 0.9867
+epoch  6  train loss 0.1473  val loss 0.0545  val acc 0.9600
+epoch  7  train loss 0.1451  val loss 0.0568  val acc 0.9600
+epoch  8  train loss 0.1379  val loss 0.0510  val acc 0.9733
+epoch  9  train loss 0.1384  val loss 0.0536  val acc 0.9733
+epoch 10  train loss 0.1385  val loss 0.0520  val acc 0.9867
+best val acc 0.9867 (loss 0.0466) -> C:\Users\jhanv\AppData\Local\Temp\camday\sys\runs\student_u1\weights.pt
+
+$ C:\Python313\python.exe C:\Users\jhanv\AppData\Local\Claude-Data\claude_pzs8sxrjxfjjc\scratch-workspaces\e2729752-c8f3-480d-b2b7-a6a0ef22126e\b97f613d-9dbb-45c7-aba5-72e296e605d4\scratch-2026-10-24-217bd3\ai-dustbin-data\student\calibrate.py --weights C:\Users\jhanv\AppData\Local\Temp\camday\sys\runs\student_u1\weights.pt --data_dir C:\Users\jhanv\AppData\Local\Temp\camday\sys\pool --no_crop --fallback_from C:\Users\jhanv\AppData\Local\Temp\camday\sys\deploy\current\weights.pt
+val images 75   temperature T = 0.3629
+NLL 0.0466 -> 0.0287
+ECE 0.0219 -> 0.0189
+saved T into C:\Users\jhanv\AppData\Local\Temp\camday\sys\runs\student_u1\weights.pt and C:\Users\jhanv\AppData\Local\Temp\camday\sys\runs\student_u1\temperature.json
+threshold: None (none: the val rule cannot be met with 75 val images (needs enough per class))
+
+DONE student_u1 (replaces organik_gray_v2): val acc 0.9867, NLL 0.0287, ECE 0.0189, T 0.363; trained on 690 images (17 from feedback, 690 with a teacher probability)
+-> C:\Users\jhanv\AppData\Local\Temp\camday\sys\runs\student_u1\weights.pt   (details: C:\Users\jhanv\AppData\Local\Temp\camday\sys\runs\student_u1\update.json)
+Next, the gate:  python student/promote.py --candidate C:\Users\jhanv\AppData\Local\Temp\camday\sys\runs\student_u1\weights.pt --current C:\Users\jhanv\AppData\Local\Temp\camday\sys\deploy\current\weights.pt --pool C:\Users\jhanv\AppData\Local\Temp\camday\sys\pool
+
+$ C:\Python313\python.exe C:\Users\jhanv\AppData\Local\Claude-Data\claude_pzs8sxrjxfjjc\scratch-workspaces\e2729752-c8f3-480d-b2b7-a6a0ef22126e\b97f613d-9dbb-45c7-aba5-72e296e605d4\scratch-2026-10-24-217bd3\ai-dustbin-data\student\promote.py --candidate C:\Users\jhanv\AppData\Local\Temp\camday\sys\runs\student_u1\weights.pt --current C:\Users\jhanv\AppData\Local\Temp\camday\sys\deploy\current\weights.pt --pool C:\Users\jhanv\AppData\Local\Temp\camday\sys\pool --releases C:\Users\jhanv\AppData\Local\Temp\camday\sys\releases --report C:\Users\jhanv\AppData\Local\Temp\camday\sys\runs\student_u1\gate.json
+candidate student_u1  (T=0.36291244626045227, calibrated on C:\Users\jhanv\AppData\Local\Temp\camday\sys\pool)
+current organik_gray_v2, shipped ['organik_gray_v2']
+  test_fixed [gated] 72 images, 3 errors, acc 0.9583 [0.885, 0.986], balanced 0.9583  |  dry P 1.000 R 0.917 (n 36)  wet P 0.923 R 1.000 (n 36)
+    vs_current organik_gray_v2: only candidate wrong 1, only organik_gray_v2 wrong 5, extra errors -4 (McNemar p 0.219)
+    vs_best    organik_gray_v2: only candidate wrong 1, only organik_gray_v2 wrong 5, extra errors -4 (McNemar p 0.219)
+  test_audit [reported (gated from 30 images)] 9 images, 0 errors, acc 1.0000 [0.701, 1.000], balanced 1.0000  |  dry P 1.000 R 1.000 (n 5)  wet P 1.000 R 1.000 (n 4)
+    vs_current organik_gray_v2: only candidate wrong 0, only organik_gray_v2 wrong 1, extra errors -1 (McNemar p 1.000)
+    vs_best    organik_gray_v2: only candidate wrong 0, only organik_gray_v2 wrong 1, extra errors -1 (McNemar p 1.000)
+  test_hard  [reported] 5 images, 0 errors, acc 1.0000 [0.566, 1.000], balanced 1.0000  |  dry P 1.000 R 1.000 (n 1)  wet P 1.000 R 1.000 (n 4)
+    vs_current organik_gray_v2: only candidate wrong 0, only organik_gray_v2 wrong 1, extra errors -1 (McNemar p 1.000)
+    vs_best    organik_gray_v2: only candidate wrong 0, only organik_gray_v2 wrong 1, extra errors -1 (McNemar p 1.000)
+ACCEPTED: released as C:\Users\jhanv\AppData\Local\Temp\camday\sys\releases\student_u1\weights.pt
+
+DEPLOYED student_u1 -> C:\Users\jhanv\AppData\Local\Temp\camday\sys\deploy\current\weights.pt (threshold 0.8, fallback 0.8)
+recorded in C:\Users\jhanv\AppData\Local\Temp\camday\sys\models.csv

@@ -1,0 +1,22 @@
+Using cache found in C:\Users\jhanv/.cache\torch\hub\facebookresearch_dinov2_main
+pool images by origin and split:
+source     split     
+augmented  train         171
+feedback   test_audit      9
+           test_hard       5
+           train          17
+           val             3
+public     test_fixed     72
+           train         502
+           val            72
+Organik rows: 813 (by origin: {'public': 646, 'augmented': 167})
+pool train: 21 feedback rows (fit + label), 669 Organik rows (label only)
+dataset_D_v2_balanced: matched 2716/2716 images to manifest.csv
+dataset_D_v2_balanced: 2716/2716 images have a mask (others used uncropped)
+leak guard: 0 of 1923 fitted images match any of 813 Organik/test_fixed images
+teacher_v2: C=0.1, T=0.868; fitted on 1902 public + 21 feedback train images (no Organik)
+accuracy on Organik train (never fitted) 0.9073
+out-of-fold accuracy on feedback train 0.9048
+val accuracy 0.9901 (406 images)
+(for the record) test_fixed accuracy 0.9583, 72 images; not used for any choice
+wrote 690 soft labels -> runs\teacher_v2\soft_labels.csv

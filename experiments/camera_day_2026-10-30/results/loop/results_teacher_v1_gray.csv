@@ -1,0 +1,2 @@
+dataset,model,n,acc,acc_ci95,ece,"cm [[dd,dw],[wd,ww]]",acc_realwaste,acc_roboflow
+dataset_D_v2_balanced,teacher_v1_gray,411,0.9927007299270073,"[0.979, 0.998]",0.008688374035444077,"[[206, 2], [1, 202]]","0.992 [0.972, 0.998] n=252","0.994 [0.965, 0.999] n=159"

@@ -1,0 +1,20 @@
+pool (student_u1_B): C:\Users\jhanv\AppData\Local\Temp\camday\sys\pool  train=690 {'public': 502, 'feedback': 17, 'augmented': 171} val=75  size 224  crops: already the detector's
+train counts {'dry waste': 345, 'wet waste': 345} class weights [1.0, 1.0]
+starting from C:/Users/jhanv/AppData/Local/Temp/camday/sys/releases/organik_gray_v2/weights.pt (organik_gray_v2)
+device: cpu
+epoch  1  train loss 0.0441  val loss 0.1029  val acc 0.9600
+epoch  2  train loss 0.0080  val loss 0.0644  val acc 0.9867
+epoch  3  train loss 0.0151  val loss 0.0614  val acc 0.9867
+epoch  4  train loss 0.0051  val loss 0.0678  val acc 0.9867
+epoch  5  train loss 0.0089  val loss 0.0722  val acc 0.9867
+epoch  6  train loss 0.0117  val loss 0.0916  val acc 0.9733
+epoch  7  train loss 0.0022  val loss 0.0800  val acc 0.9733
+epoch  8  train loss 0.0016  val loss 0.0654  val acc 0.9867
+epoch  9  train loss 0.0020  val loss 0.0652  val acc 0.9867
+epoch 10  train loss 0.0037  val loss 0.0610  val acc 0.9867
+best val acc 0.9867 (loss 0.0610) -> C:\Users\jhanv\AppData\Local\Temp\camday\sys\runs\student_u1_B\weights.pt
+val images 75   temperature T = 1.4666
+NLL 0.0610 -> 0.0543
+ECE 0.0216 -> 0.0278
+saved T into C:/Users/jhanv/AppData/Local/Temp/camday/sys/runs/student_u1_B/weights.pt and C:\Users\jhanv\AppData\Local\Temp\camday\sys\runs\student_u1_B\temperature.json
+student_u1_B_no_teacher test 113 accuracy 0.9204
