@@ -29,6 +29,7 @@ photos that are not in the pool (e.g. held-back photos replayed as feedback), wh
 groups are excluded by default.
 
 Writes one row per train crop_id: crop_id, teacher_logit, teacher_wet_prob, fold, teacher_version.
+teacher_wet_prob = sigmoid(teacher_logit / T), the teacher's calibrated probability (T is fitted on val).
 Also saves <out dir>/<version>.joblib and prints accuracy on val and test_fixed (for the record:
 nothing is tuned on test_fixed).
 
@@ -172,7 +173,7 @@ def main(a):
     assert not np.isnan(z).any() and (fold >= 0).all(), "some pool train rows got no label"
 
     table = pd.DataFrame({
-        "crop_id": pool_train.crop_id, "teacher_logit": z, "teacher_wet_prob": sigmoid(z),
+        "crop_id": pool_train.crop_id, "teacher_logit": z, "teacher_wet_prob": sigmoid(z / t.temperature),
         "fold": fold, "teacher_version": a.version})
     if table.crop_id.duplicated().any():
         raise SystemExit("duplicate crop_ids in the pool's train rows")
