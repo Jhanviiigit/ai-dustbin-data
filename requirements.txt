@@ -5,3 +5,4 @@ torch>=2.2         # student model (student/)
 torchvision>=0.17
 onnx>=1.15        # only for student/export_onnx.py
 scipy>=1.10        # only for data_prep/regroup_organik.py
+pyserial>=3.5     # only on the bin (bin_vision/esp32_link.py)

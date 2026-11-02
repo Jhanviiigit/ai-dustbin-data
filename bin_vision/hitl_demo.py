@@ -2,8 +2,7 @@
 hitl_demo.py
 ------------
 The bin's decision loop with human-in-the-loop, on a webcam. Everything the bin
-does except moving the servo (actuate() only prints, until the main loop and
-firmware exist).
+does; with --serial it also moves the servo through the ESP32 (esp32_link.py).
 
 For each load:
   1. wait until the plate has settled and nothing new has landed for --wait seconds
@@ -30,15 +29,25 @@ import time
 
 import cv2
 
+from esp32_link import DEFAULT_PORT, ESP32Link
 from hitl import (AUDIT_EVERY, THRESHOLD_FALLBACK, FeedbackStore, KeyboardAsker, ReviewPolicy, crop_for,
                   load_deployed, resolve, summarize)
 from multi_item import (DEFAULT_RULE, DropCounter, ItemDetector, assess, draw,
                         load_student, make_classify)
 
 
-def actuate(action):
-    """Stand-in for the servo: replace with the serial command to the ESP32."""
-    print(f"  -> {action}")
+def csi_pipeline(sensor_id=0, width=1280, height=720, fps=30, flip=0):
+    """GStreamer pipeline for a Jetson CSI camera (needs OpenCV built with GStreamer, as in JetPack)."""
+    return (f"nvarguscamerasrc sensor-id={sensor_id} ! "
+            f"video/x-raw(memory:NVMM), width={width}, height={height}, framerate={fps}/1 ! "
+            f"nvvidconv flip-method={flip} ! video/x-raw, width={width}, height={height}, format=BGRx ! "
+            "videoconvert ! video/x-raw, format=BGR ! appsink drop=1")
+
+
+def actuate(action, link=None):
+    """Print the decision and, if an ESP32 link is open, send the tilt command."""
+    sent = link.send(action) if link else None
+    print(f"  -> {action}" + (f" (sent '{sent}')" if sent else ""))
 
 
 def load_ready(counter, items, last_drop_time, wait_s, settle_frames):
@@ -59,6 +68,10 @@ if __name__ == "__main__":
     parser.add_argument("--audit_mode",      choices=["every", "random"], default="every")
     parser.add_argument("--wait",            type=float, default=1.5, help="Seconds after the last drop before deciding")
     parser.add_argument("--camera",          type=int, default=0)
+    parser.add_argument("--csi",             action="store_true", help="Jetson CSI camera (--camera is then the sensor id)")
+    parser.add_argument("--flip",            type=int, default=0, help="CSI flip-method (2 = rotate 180)")
+    parser.add_argument("--serial",          nargs="?", const=DEFAULT_PORT, default=None, metavar="PORT",
+                        help=f"Move the servo through the ESP32 on this port (default {DEFAULT_PORT}); without it, decisions are only printed")
     args = parser.parse_args()
 
     def load_model():
@@ -77,7 +90,11 @@ if __name__ == "__main__":
     asker = KeyboardAsker()
     store = FeedbackStore(args.feedback, version)
     policy = ReviewPolicy(args.audit_every, args.audit_mode).resume(store)
-    cap = cv2.VideoCapture(args.camera)
+    link = ESP32Link(args.serial) if args.serial else None
+    cap = (cv2.VideoCapture(csi_pipeline(args.camera, flip=args.flip), cv2.CAP_GSTREAMER) if args.csi
+           else cv2.VideoCapture(args.camera))
+    if not cap.isOpened():
+        raise SystemExit("Camera did not open" + (" (is OpenCV built with GStreamer? try: gst-launch-1.0 nvarguscamerasrc ! fakesink)" if args.csi else ""))
 
     state, last_drops, last_drop_time, banner = "waiting", 0, time.time(), "clear the plate and press [r]"
     print(f"Logging to {args.feedback} (audit every {args.audit_every}, {policy.auto_loads} auto-tilt loads so far)")
@@ -104,7 +121,7 @@ if __name__ == "__main__":
                     final = resolve(human)
                 load_id = store.record(frame, decision, trigger, human, final)
                 print(f"{load_id}: {decision.action} ({decision.reason})" + (f", {trigger}: human said {human}" if trigger else ""))
-                actuate(final)
+                actuate(final, link)
                 banner = f"{final}  [{decision.composition or '-'}]" + (f"  {trigger}" if trigger else "")
                 shown = draw(frame, decision)
                 state = "done"
@@ -133,6 +150,8 @@ if __name__ == "__main__":
 
     cap.release()
     cv2.destroyAllWindows()
+    if link:
+        link.close()
     if store.n_loads:
         for row in summarize(args.feedback):
             print(row)

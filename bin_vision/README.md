@@ -56,8 +56,10 @@ python multi_item.py --reference empty.jpg --frame scene.jpg --student_dir ... -
 ## Human-in-the-loop (bin side)
 
 `hitl.py` decides when a human is asked, asks them, and saves what the teacher
-needs. `hitl_demo.py` runs the whole loop on a webcam (the servo is a print-out
-until the main loop and firmware exist).
+needs. `hitl_demo.py` runs the whole loop on a webcam (`--csi` reads a Jetson CSI camera; `--serial` moves the servo through
+the ESP32, see `esp32_link.py`: `dry
+` / `wet
+` at 115200 baud, sent only for `TILT` decisions).
 
 **When a human is asked** (`ReviewPolicy`):
 
